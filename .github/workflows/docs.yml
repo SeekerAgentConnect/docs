@@ -1,0 +1,21 @@
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches: [v1.0, main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ReadMe CLI lint
+        run: npx --yes @readme/cli lint
+      - name: Internal links and navigation
+        run: node scripts/check-docs.mjs
