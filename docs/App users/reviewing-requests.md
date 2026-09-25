@@ -1,66 +1,84 @@
 ---
 title: Review requests
-excerpt: Home browses waiting work. Request details is where you answer. The wallet is a second confirmation.
+excerpt: The Inbox lists requests and signals. A review sheet is where you answer. The wallet is a second confirmation.
 hidden: false
 ---
 
-Home, **Requests**, and each connection’s **Pending requests**, **Signals**, or **Requests** row share one collection. **Signal** is a small label plus the feed’s local name. It is not a different lifecycle.
+Everything waiting for you is in one place: the **Inbox** tab. Requests from direct servers and signals from public feeds wait in one list, newest first. **Signal** is a label plus the feed's name, not a different lifecycle.
 
-The Home carousel only browses. Its hint: *The carousel only browses — nothing is answered here.* Tap a card to open **Request details**.
+Home's **Waiting for you** carousel only browses. Its caption: *Swipe to browse, tap to review. The carousel only browses — nothing is answered here.*
 
-## The list
+## The Inbox
 
-**Requests** has up to three parts:
+Two tabs: **Pending** and **History**. Each pending row shows what is asked, the source, when it arrived and when it expires, **Production** or **Sandbox · no funds will move**, the network, and a warning count from your [rules](/docs/rules). The footer reads: *Requests and signals wait in one list, newest first. Review opens the whole operation: a production request hands off to the wallet, a sandbox item is only simulated on this phone.*
 
-- **Waiting for you** — not answered yet. Each row shows the connection, the action, age, and expiry.
-- **Waiting to be sent** — your answer is stored on the phone and has not reached the server.
-- **Answered** — the server confirmed it.
+**History** holds what you answered, dismissed, or that expired or was cancelled. A connection's own list opens from its sheet (**Its inbox**), in three parts: **Waiting for you**, **Waiting to be sent**, and **Answered**.
 
-A connection the phone could not reach is named at the top. The list then shows what the phone already had.
+## Review sheets
 
-## Review versus final approval
-
-| Step | What happens | Wallet? |
-| --- | --- | --- |
-| 1. A server creates a request | It waits as pending | No |
-| 2. You open it | The phone prepares and inspects what it can prove | No |
-| 3. You tap Approve / Acknowledge / Simulate | SAC records the decision. For wallet actions the server must accept the approval first | Still no |
-| 4. Seed Vault Wallet opens | You confirm there | Only here, and only in production |
-| 5. You decline in the wallet | Treated as rejection | Nothing signed |
-
-If the phone cannot read a transaction whole, or the bytes disagree with the request, **there is no Approve button**. Rules never put that button back.
-
-For a transfer, **Approve and send** binds the preparation’s version, content hash, wallet, network, and exact bytes. Those stored bytes are what the wallet is handed — never a copy fetched again.
-
-## What you tap
+Tapping a row opens a review sheet over the tab. Every kind uses the same sheet: a headline, chips for the source, environment, and network, the facts the phone read for itself, **The agent's note · not verified** shown apart from them, the expiry, **What your rules make of this**, and two buttons.
 
 | Kind | Primary actions |
 | --- | --- |
-| Acknowledgement | **Acknowledge** / **Reject** |
-| Sign message | **Approve and sign** / **Reject** |
-| Transfer | **Approve and send** / **Reject**, plus **Read it again** and **Check status** |
-| Swap (production) | Enter amount → **Get a quote and prepare** → **Approve and swap** |
-| Swap (sandbox) | Same review, then **Simulate**. The wallet is not opened |
-| Prediction | Choose side and stake → prepare → approve or **Simulate** |
+| Acknowledgement | **Acknowledge** / **Reject**. *Nothing is signed and no funds move. Your answer is all the agent gets.* |
+| Signature | **Approve and sign** / **Reject** |
+| Transfer | **Approve and send** / **Reject**, plus **Read it again** and, once sent, **Check status** |
+| Swap (signal) | **Amount to swap** and slippage → **Get a quote and prepare** → **Approve and swap**, or **Simulate** in sandbox. **Hide this signal** dismisses it for good |
+| Prediction order (signal) | **Which side** (**Yes** / **No**) and **Amount to stake** → prepare → approve or **Simulate** |
+| Stake SKR | **Approve and stake** / **Reject** |
+| Start unstaking SKR | **Approve and start unstaking** / **Reject** |
+| Cancel unstaking | **Approve and cancel unstaking** / **Reject** |
+| Withdraw unstaked SKR | **Approve and withdraw** / **Reject** |
 
-Publisher or agent **notes** are shown separately from facts the phone established. Notes are unverified.
+Amounts, sides, and slippage are [owner inputs](/docs/owner-inputs): the request declares the control, you fill it in.
 
-When [rules](/docs/rules) warn, you must tick **I have read the warnings above and want to go ahead anyway**. The button becomes **Approve despite warnings** (or the send/acknowledge variant). **Reject** never waits for a tick.
+## Two steps, then the wallet
+
+| Step | What happens | Wallet? |
+| --- | --- | --- |
+| 1. A server or publisher creates it | It waits as pending | No |
+| 2. You open it | The phone prepares the operation and reads the bytes itself | No |
+| 3. You tap Approve / Acknowledge | SAC records the decision. A direct server must accept the approval, for the exact version and content hash you saw, before anything else happens | No |
+| 4. The wallet hand-off sheet | **Approve a transaction**, with **Seed Vault Wallet**: **Sign and send**, **Decline**, or **Leave without answering** (the request stays pending) | Only here, and only in production |
+| 5. You decline in the wallet | Recorded as a rejection | Nothing signed |
+
+If the phone cannot read a transaction whole, or the bytes disagree with the request, **there is no Approve button**. Rules never put it back. What the wallet is handed is the stored bytes you approved, never a copy fetched again.
+
+When the rules warn, tick **I have read the warnings above and want to go ahead anyway** (on a signal: *… and mean to go ahead*). The button becomes **Approve despite warnings**, **Approve and send despite warnings**, or **Acknowledge despite warnings**. **Reject** never waits for a tick.
+
+## Sandbox means Simulated
+
+A sandbox item shows: *Sandbox. Everything above is real — the live market, the exact transaction and this phone's reading of it. The last step is not: no funds will move, nothing is signed and nothing is sent.* **Simulate** records **Simulated** in [Activity](/docs/outcomes-and-history) and stops. The wallet is not opened. Sandbox is not a Solana network: the bytes are mainnet bytes, so the wallet must be a mainnet one. Direct connections are always production.
+
+## Staking reviews
+
+The four staking actions are four different reviews, because unstaking and withdrawing are easy to confuse: one starts a wait and moves nothing, the other returns the SKR. Each states its effect, for example: *Starts unstaking. No SKR reaches your wallet now: these tokens stop earning, wait out a cooldown, and then have to be withdrawn in a second, separate approval.* Facts include **Amount**, **Still staked afterwards**, **Withdrawable from**, **Cooldown finished**, **Also creates** (your SKR token account, when needed), and **Staking account**. If a cooldown is already running, an unstake warns that approving restarts it. Staking is mainnet only; the phone reads your position from its own Solana endpoint before checking the transaction. See [SKR staking](/docs/skr-staking).
+
+## When nothing on this phone serves a signal
+
+A signal is refused before anything is prepared when:
+
+- this build does not carry the execution provider it names;
+- it carries that provider, but at a version it cannot call;
+- that provider does not do what the signal asks for;
+- the signal states a version of its action this build does not read;
+- the provider does not serve the network your wallet is selected for;
+- the provider does not serve this connection's environment;
+- the provider does not take the asset the signal names;
+- the signal names a capability that was published for something other than what it asks for.
+
+The signal stays readable and can be hidden. Nothing carries it out, and no other provider is picked instead.
 
 ## Message signing
 
-The complete message is on the phone, with invisible characters marked (`␊` for a line break). **Signs with** names the connected wallet. A signature moves no funds.
+The complete message is on the phone, with invisible characters marked (`␊` for a line break, a code point such as `U+200B` for the rest). **Signs with** names the connected wallet. A signature moves no funds.
 
 ## Transfers
 
-The phone reads amount, recipient, token, signers, and instructions out of the bytes. Token-2022 mints, NFTs, and token accounts given as recipients are refused by name. Amounts are whole base units.
-
-**Check status** is a read-only chain lookup. It does not reopen the wallet. If the wallet never returned, the outcome is **UNKNOWN** — do not retry from the app. Check the wallet history or an explorer.
+The phone reads amount, recipient, token, signers, and instructions out of the bytes. Token-2022 mints, NFTs, and token accounts given as recipients are refused by name. Amounts are whole base units. A stale preparation is refused and read again for you; an old approval is never reused.
 
 ## After you answer
 
-The phone **saves the answer before sending it**. If the server is unreachable, it sits under **Waiting to be sent**. **Send again** and **Refresh** retry the same answer. Sending twice is safe.
+The phone saves the answer before sending it. If a direct server is unreachable, it sits under **Waiting to be sent**; **Send again** and **Refresh** retry the same answer, and sending twice is safe. A cancelled or expired request cannot be answered. A feed decision stays on this phone: the publisher and gateway are never told.
 
-A cancelled or expired request cannot be answered. An answer already stored on this phone opens its existing record.
-
-Tapping a [notification](/docs/notifications) never chooses an answer. It only opens the named request after a current-state fetch.
+Tapping a [notification](/docs/notifications) never chooses an answer. It only opens the named item after a current-state fetch.

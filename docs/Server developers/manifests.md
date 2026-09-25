@@ -1,40 +1,48 @@
 ---
 title: Manifests and capabilities
-excerpt: A server manifest is the validated statement of who you are, which mode you use, and which plugins the phone must already contain.
+excerpt: A server manifest is the validated statement of who you are, which of the two modes you use, and which bundled client plugins the phone must already contain.
 hidden: false
 ---
 
-A **server manifest** is protobuf `seekervault.server.v1.ServerManifest`. Every kind of server publishes one. The phone validates it before anything from that server can be executed.
+A **server manifest** is protobuf `seekervault.server.v1.ServerManifest`. Every server publishes one. The phone validates it before anything from that server can be executed.
 
-Templates build and publish a feed manifest from configuration. Independent servers call `PublishServerManifest`. You do not install code through a manifest.
+A direct server built on the [SDK](/docs/direct-server-sdk) publishes its own; the demos build a feed manifest from configuration; a plain-HTTP publisher sends one with `PublisherService.PublishManifest`. You do not install code through a manifest.
 
 ## Fields
 
 | Field | Rule |
 | --- | --- |
-| `server_id` | Lowercase UUID |
-| `protocol_version` | `1` in this release. Zero is never published |
+| `server_id` | Lowercase UUID: the one in a pairing code, or the registered publisher ID |
+| `protocol_version` | `1`. Zero is never published. A version this build does not speak is "update the app", not a malformed server |
 | `settings_revision` | Increases when anything else changes. Never goes backwards |
-| `mode` | `direct`, `gateway_feed`, or `gateway_private`. Never absent, never inferred |
-| `required_plugins` | At most 16 IDs, each with a contract range |
+| `mode` | `CONNECTION_MODE_DIRECT` (1) or `CONNECTION_MODE_GATEWAY_FEED` (2). Never absent, never inferred. Value 3 is reserved for the retired private mode |
+| `required_plugins` | At most 16 `PluginRequirement { plugin_id, min_contract, max_contract }` |
 | `environments` | `production`, `sandbox`, or both — what the **server serves** |
-| `display_name` | Optional, bounded, unverified |
-| Reference | One of `direct` (URL), `feed` (gateway origin + `server/<server_id>`), or `gateway_private` (gateway origin only) |
+| `display_name` | Optional, at most 64 bytes, never verified |
+| Reference | One of `direct { url }` or `feed { gateway_url, channel }`. Field 10 (`gateway_private`) is reserved |
 
-The reference must match the mode. A feed channel must be `server/<your server_id>`. A private manifest’s gateway origin must equal the gateway’s public origin, including scheme and port.
+The reference must match the mode. A manifest has **no** field that installs code, asks for a permission, carries a policy, or names a wallet endpoint.
 
-A manifest has **no** field that installs code, asks for a permission, carries a policy, or names a wallet endpoint.
+### Direct
 
-## Plugins
+The SDK builds and serves it for you over `PairingService.GetServerManifest`: mode `direct`, `url` = your configured public origin, `environments` = production only, no required plugins, no display name (a direct connection is labelled by the host the owner paired with). The revision moves when those settings change. A server that answers `UNIMPLEMENTED` is the documented **legacy direct** path: no manifest, nothing required, same pairing and request store.
 
-Shipped client plugins:
+### Feed
 
-| Plugin ID | Capability ID | Contract |
-| --- | --- | --- |
-| `jupiter.swap` | `swap` | 1 |
-| `jupiter.prediction` | `prediction` | 1 |
+Published to the gateway and resolved by the phone from the gateway, never from you. `gateway_url` must equal the gateway's `BROADCAST_PUBLIC_URL` character for character (`other_gateway`), `channel` must be `server/<your server_id>` (`foreign_channel`), and the server ID must be the one your credential resolves to (`other_server`). The gateway refuses a direct manifest: relaying one would let a publisher point phones at an address of its choosing.
 
-A plugin ID is a lowercase dotted name, not a URL. The phone matches it against code **already compiled** into the build. Missing or incompatible plugins make the server unexecutable: the owner can still read and reject, but there is no Approve button to overrule that.
+## Plugins and capabilities
+
+A request's `action` names a versioned capability (`capability_id`, `capability_version`) and the bundled plugin it is written for (`plugin_id`). The manifest says which plugins, at which contract range.
+
+| Manifest `plugin_id` | `capability_id` | `capability_version` | Contract | On the phone |
+| --- | --- | --- | --- | --- |
+| `jupiter.swap` | `swap` | 1 | 1 | Execution provider `jupiter` |
+| `jupiter.prediction` | `prediction` (also `prediction.buy`) | 1 | 1 | Execution provider `jupiter` |
+
+The two plugin names are legacy spellings served by one provider. Nothing on the wire changed: publish `min_contract` 1 and `max_contract` 1. A plugin ID is a lowercase dotted name, never a URL, and is matched against code **already compiled** into the build. Missing or incompatible plugins make the server unexecutable: the owner can read and reject, but there is no Approve button to overrule that.
+
+A direct manifest lists no plugins. Its actions — `ack`, `sign_message`, `transfer`, `swap`, `staking` — are carried out by the app itself.
 
 ## What the phone does with a revision
 
@@ -45,16 +53,15 @@ A plugin ID is a lowercase dotted name, not a URL. The phone matches it against 
 
 Unreachable is not an answer: the previous record stays.
 
-**Support is not cached.** Installing a build that adds a plugin must be able to change the verdict.
+**Support is not cached.** It is derived from the compiled plugin registry on every read, so installing a build that adds a plugin changes the verdict.
 
-A `protocol_version` this build does not speak is “update the app”, not a malformed server. Version zero is malformed.
+| Support state | Executable |
+| --- | --- |
+| `Supported`, `LegacyDirect`, `Unknown` (not asked yet) | Yes |
+| `ManifestRefused`, `ProtocolUnsupported`, `EnvironmentUnsupported`, `PluginMissing`, `PluginIncompatible` | No; still readable, and the screen says which |
 
 ## Mode and environments cannot silently change
 
-Once a server ID has published a mode and an environment set, a later revision cannot switch them. Use a distinct server ID for a different deployment promise. The gateway refuses `other_environment`.
+A connection never changes mode. Once a server ID has published an environment set, a later revision cannot switch it: the gateway refuses `other_environment`. Use a distinct server ID for a different deployment promise.
 
-A connection records which environment the **owner keeps**. Feeds start in sandbox when the publisher offers it. Direct sidecar connections are always production.
-
-## Legacy direct
-
-A sidecar that answers `UNIMPLEMENTED` to `GetServerManifest` is a documented path: no manifest, no required plugins, same pairing and request store as before.
+A connection records which environment the **owner keeps**. Feeds start in sandbox when the publisher offers it. Direct connections are always production. Sandbox is not a Solana network, and Jupiter sandbox is not devnet trading.

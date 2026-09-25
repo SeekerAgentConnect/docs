@@ -2,7 +2,7 @@
 
 This repository is the public **Seeker Agent Connect (SAC)** documentation, published with [ReadMe](https://readme.com) from the `docs/` and `reference/` trees.
 
-The app reviews and authorizes requests from independent servers. Seed Vault Wallet still signs. Source of truth for behavior is [BrRenat/SeekerAgentWallet](https://github.com/BrRenat/SeekerAgentWallet). The revision these pages were written against is recorded on [Source mapping](docs/Reference/source-mapping.md).
+The app reviews and authorizes requests from independent servers. Seed Vault Wallet still signs. Source of truth for behavior is [BrRenat/SeekerAgentConnect](https://github.com/BrRenat/SeekerAgentConnect) (formerly SeekerAgentWallet). The revision these pages were written against is recorded on [Source mapping](docs/Reference/source-mapping.md).
 
 ## Repository layout
 
@@ -54,10 +54,10 @@ This repo is wired for ReadMe Git Sync:
 3. List the slug in that folder’s `_order.yaml`. Category names belong in `docs/_order.yaml`.
 4. Link internally as `/docs/<slug>`.
 5. Use placeholders (`replace-with-publisher-credential`, `gateway.example.com`) — never real tokens.
-6. Distinguish `direct`, `gateway_feed`, and `gateway_private`. Do not describe Sandbox as a Solana network or Jupiter sandbox as devnet trading.
-7. Update [Source mapping](docs/Reference/source-mapping.md) when SDK, proto, or UI labels change.
+6. Distinguish `direct` and `gateway_feed`. `gateway_private` is retired: never describe it as available. Do not describe Sandbox as a Solana network or Jupiter sandbox as devnet trading.
+7. Update [Source mapping](docs/Reference/source-mapping.md) when the Direct Server SDK, the gateway API, proto, or UI labels change.
 8. Run the two validation commands above.
 
 ## License
 
-Documentation in this repository follows the license of [SeekerAgentWallet](https://github.com/BrRenat/SeekerAgentWallet) unless a file says otherwise.
+Documentation in this repository follows the license of [SeekerAgentConnect](https://github.com/BrRenat/SeekerAgentConnect) unless a file says otherwise.

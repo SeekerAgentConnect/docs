@@ -1,7 +1,9 @@
 - overview
-- go-sdk
 - manifests
-- private-invitation-walkthrough
-- public-feed-walkthrough
 - request-lifecycle
+- direct-server-sdk
+- direct-server-walkthrough
+- public-feed-walkthrough
+- push-relay
 - examples
+- private-invitation-walkthrough

@@ -1,43 +1,56 @@
 ---
 title: Updates and backups
-excerpt: Migrate on start. Back up SQLite volumes. A backup does not restore wallet keys or phone Activity.
+excerpt: Each component has its own files and schema. Back up while stopped, upgrade the gateway before publishers, never roll a binary back onto a newer schema.
 hidden: false
 ---
 
-## Owner sidecar
+## What each component keeps
+
+| Component | Data | Schema |
+| --- | --- | --- |
+| MCP server | `DATABASE_PATH` SQLite (`~/.seeker-agent-connect/mcp-server/direct-server.db`; Docker `/data/sidecar.db` in `seeker-agent-connect-mcp_mcp-data`) plus a sibling `*.mcp-server-owner.sqlite` lock: server ID, pairing and phone credential hash, requests, results, wallet binding, update state, FCM target or relay handle | `PRAGMA user_version`, currently 7 |
+| SKR staking server | `SKR_STAKING_DATABASE_PATH` (`/data/skr-staking-server.db` in `seeker-agent-connect-skr-staking_skr-data`), the same SDK store | Same |
+| Feed gateway | `BROADCAST_DATABASE_PATH` (`/data/broadcast.db` in `seeker-broadcast_broadcast-data`) or Postgres `BROADCAST_DATABASE_URL`: registrations, credential hashes, manifests, documents, sequences, outbox, relay installations and bindings | SQLite v6, Postgres v2 |
+| Feed ingress | ACME certificates in `seeker-broadcast_proxy-data` and `-config` | none |
+| CopyTrading demo | `/data/publisher.db` in `seeker-publisher_publisher-data`: identity, proposals, revisions, outbox | Stamped; sharing a file between demos is refused |
+| Prediction demo | `/data/prediction.db` in `seeker-prediction_prediction-data` | Same |
+| Centrifugo, Redis | Recovery cache only; nothing to back up | none |
+| Android | App-private files: connection metadata, Keystore-encrypted credentials, sync cache, answers, Activity, the wallet session. `allowBackup="false"`; nothing is backed up or transferred between devices | none |
+
+Outside every database: agent tokens, TLS keys, OAuth settings, Firebase credentials, the admin password hash, and publisher credentials (the gateway stores only hashes).
+
+## Back up while stopped
+
+Stop the one writer, archive the exact volume, start it again. SQLite keeps `-wal` and `-shm` beside the file while it runs; copy all three, or copy after a clean stop when none remain.
 
 ```sh
-git pull
-docker compose up -d --build
+docker volume ls
+docker compose --env-file deploy/feed/.env -f deploy/feed/compose.yaml stop feed-gateway
+docker run --rm -v seeker-broadcast_broadcast-data:/from:ro \
+  -v "$PWD/backups:/to" alpine:3.22 tar -C /from -czf /to/feed-gateway-data.tgz .
+docker compose --env-file deploy/feed/.env -f deploy/feed/compose.yaml start feed-gateway
 ```
 
-The sidecar migrates its database when it opens. A downgrade is refused if the database is newer than the binary.
+The MCP server also supports a hot backup with SQLite `VACUUM INTO` from a read-only connection. Restore only while stopped, keep ownership `10001:10001`, remove stale `-wal` and `-shm` files, run `PRAGMA integrity_check`, and confirm the server or publisher ID before resuming traffic. Protect backups as credentials. A Postgres gateway is backed up by the database service.
 
-Hot backup example (shape only — keep the exact Node snippet from your checkout’s operator guide):
+Never merge two SQLite files; two non-empty volumes are two identities. Never `docker compose down -v`, and never use a wildcard prune or `--remove-orphans` to silence a naming warning.
 
-```sh
-docker compose exec sidecar node -e '/* VACUUM INTO backup path */'
-docker compose cp sidecar:/data/backup.db ./sidecar-$(date +%F).db
-```
+## Upgrade
 
-Restore: stop the container, copy into the volume, `chown 10001:10001`, remove stale `-wal`/`-shm`.
+Record the image or tarball version, back up, then replace one service: `up -d --build --no-deps <service>`. Every component migrates its schema forward transactionally on first open.
 
-A sidecar backup restores **request history and the credential hash**. It does not restore:
+Upgrade the gateway before its publishers. A newer publisher against a gateway without `Heartbeat` keeps retrying its check-in on a slow backoff (a minute, doubling to an hour) and resumes on the gateway's interval once it is upgraded; phones show its feed as Connected (unknown), never offline, in the meantime. Nothing needs restarting in step. Direct servers upgrade independently of the gateway; pairings, credentials and requests stay compatible across source, Docker and npm launches.
 
-- Seed Vault Wallet keys
-- SAC Activity on the phone
-- Android Keystore-wrapped credentials
+MCP ownership is an exclusive SQLite transaction in the lock file; a second live process fails closed. Stop every older process before the first start of a new binary. The lock file persists and must not be deleted.
 
-After restore, the phone may need to pair again.
+## Roll back
 
-## Shared gateway
+Rollback is the old image plus its matching pre-upgrade archive. Never point a downgraded binary at a schema a newer binary migrated: the SDK refuses a newer database and exits, and the gateway does the same. Restore the archive into the same empty volume, then start the old image.
 
-Stop broadcast and proxy. Archive `broadcast-data` and `gateway-caddy-data`. Update with `--no-deps` for those services. Demo publishers separately with `--no-deps`.
+## What a backup does not restore
 
-Redis is not durable by design. Stream recovery uses the broker cache; unary reads still have SQLite.
+A direct-server backup restores request history and the phone credential hash. It does not restore Seed Vault Wallet keys, SAC Activity, or the Keystore-wrapped credentials on the phone. After a restore the phone may need to pair again; a phone whose data was cleared must pair with every server again.
 
-Never `docker compose down -v` unless you intend to destroy identities, publications, and pairing.
+## If the gateway database is lost
 
-## Image-only hosts
-
-Build `linux/amd64` images on a machine with Docker, `rsync -avL` the `deploy/server` directory **excluding** `.env*`, `tls`, `secrets`, and `backups`, then `docker compose pull` and `up -d --no-build`. A copy that keeps dangling symlinks fails the Centrifugo and Caddy mounts.
+Registrations, credential hashes and relay state go with it. Log in to the admin page (the password is configuration, not a row) or use `feed-gatewayctl`, register every publisher again and hand out new credentials; old secrets cannot be recovered from hashes. For the relay, every installation and binding is gone: a still-paired phone re-enrols and re-authorises on its next reconciliation, but the direct server needs its new relay credential first, and until then its wake-ups are refused. Documents phones already read stay on the phones.
