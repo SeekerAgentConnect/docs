@@ -1,177 +1,145 @@
 ---
 title: Public feed sandbox
-excerpt: Publish a manifest, add the feed in SAC, publish revise and cancel a request, and review it as Simulate — without signing or sending.
+excerpt: Get registered, publish a manifest and a sandbox feed request with curl, add the feed in SAC, review it as Simulate, then update, withdraw, and heartbeat — without signing or sending.
 hidden: false
 ---
 
-This walkthrough builds a **public `gateway_feed`** using the CopyTrading template. Every subscriber receives the same document. Each owner’s amount, approval, and signature stay on their phone.
+This walkthrough builds a **public `gateway_feed`** with nothing but an HTTP client. Every subscriber receives the same document. Each owner's amount, approval, and signature stay on their phone, and nothing comes back to you.
 
-**Sandbox is not a Solana network.** The template publishes real mint pairs and the phone builds a real Jupiter route. The wallet is **not** opened and **nothing is sent**. Activity records **Simulated**.
+**Sandbox is not a Solana network.** The phone fetches a real Jupiter quote and builds real bytes; the wallet is **not** opened and **nothing is sent**. Activity records **Simulated**.
 
 ## Prerequisites
 
-- Go 1.27.1 or newer.
-- `curl` and `openssl`.
-- A broadcast gateway origin and a publisher credential from an operator (or your own local gateway).
-- SAC on a phone that can reach that gateway origin.
-
-This is the **developer** path. Gateway TLS, DNS, and registration are [operator](/docs/shared-gateway) steps. The owner’s taps are called out explicitly.
-
-Placeholders:
+- `curl`, `openssl`, `uuidgen`, and SAC on a phone that can reach the gateway.
+- A gateway origin and a publisher credential from an operator, or your own local gateway (`deploy/feed`). TLS, DNS, and registration are [operator](/docs/shared-gateway) steps.
 
 ```sh
-export PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
-export PUBLISHER_GATEWAY_URL=http://127.0.0.1:8090
-export PUBLISHER_PUBLISH_URL=http://127.0.0.1:8091
-export BROADCAST_CREDENTIAL=replace-with-publisher-credential
-export PUBLISHER_API_TOKEN=replace-with-at-least-32-characters
+export PUBLIC_GATEWAY=https://feeds.example.com      # what your manifest names
+export PUBLISH_URL=https://feeds.example.com         # where you send publications
+export PUBLISHER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+export CHANNEL=server/$PUBLISHER_ID
+export PUBLISHER_CREDENTIAL=replace-with-publisher-credential
+export PROPOSAL_ID=$(uuidgen | tr 'A-Z' 'a-z')      # one per feed item
 ```
 
-`BROADCAST_CREDENTIAL` is how the **gateway** knows you. `PUBLISHER_API_TOKEN` is how **your** strategy process talks to the template. Do not mix them.
-
-If the gateway’s publish listener is a different origin than the public read origin, you must set `PUBLISHER_PUBLISH_URL`. A publish aimed at the read port returns 404.
+If the operator keeps publishing on a private address, `PUBLISH_URL` differs from `PUBLIC_GATEWAY`. A publication sent to the read origin answers 404, the one mistake the gateway cannot report.
 
 ## 1. Be registered
 
-```sh
-cd broadcast
-go run ./cmd/broadcastctl register --database ./broadcast.db \
-  --server 3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d --label "copy trading"
-```
+Give the operator a label, your host if you have one, and your server UUID (or let them generate one you then use exactly). They register you with `feed-gatewayctl register` or the admin page's **Add server** and hand back five values: server ID, channel, credential (shown once), public gateway origin, publisher API address. Keep the credential in backend secret storage and send it only as `Authorization: Bearer`.
 
-Save the 43-character secret as `BROADCAST_CREDENTIAL`.
-
-## 2. Start the CopyTrading template in sandbox
-
-Both example env files ship as sandbox. A deployment that omits `PUBLISHER_ENVIRONMENT` does not start.
+## 2. Publish the manifest
 
 ```sh
-cd publisher
-PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d \
-PUBLISHER_GATEWAY_URL=http://127.0.0.1:8090 \
-PUBLISHER_PUBLISH_URL=http://127.0.0.1:8091 \
-PUBLISHER_ENVIRONMENT=sandbox \
-PUBLISHER_DISPLAY_NAME="Copy trading demo" \
-PUBLISHER_DATABASE_PATH=./copytrading.db \
-BROADCAST_CREDENTIAL="$BROADCAST_CREDENTIAL" \
-PUBLISHER_API_TOKEN="$PUBLISHER_API_TOKEN" \
-go run ./cmd/copytrading
+curl -sS --fail-with-body "$PUBLISH_URL/seekervault.gateway.v1.PublisherService/PublishManifest" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $PUBLISHER_CREDENTIAL" \
+  -d "{\"manifest\":{\"serverId\":\"$PUBLISHER_ID\",\"protocolVersion\":1,\"settingsRevision\":\"1\",
+       \"mode\":\"CONNECTION_MODE_GATEWAY_FEED\",\"environments\":[\"SERVER_ENVIRONMENT_SANDBOX\"],
+       \"displayName\":\"Example publisher\",
+       \"feed\":{\"gatewayUrl\":\"$PUBLIC_GATEWAY\",\"channel\":\"$CHANNEL\"}}}"
+# {"status":"PUBLISH_STATUS_STORED","settingsRevision":"1"}
 ```
 
-On start it publishes a `gateway_feed` manifest, then prints a reference with **no secret**:
+A phone holds no feed without one. The environment set cannot change later on this server ID (`other_environment`); production is a second deployment with its own ID.
+
+## 3. Share the reference and add the feed in SAC
+
+The feed reference carries no secret; put it in a README, a QR code, or a message:
 
 ```text
-seekervault://feed?v=1&gateway=http%3A%2F%2F127.0.0.1%3A8090&server=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+seekervault://feed?v=1&gateway=https%3A%2F%2Ffeeds.example.com&server=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 ```
 
-You can put that line in a README. Holding it grants nothing.
+There is no deep link. The owner opens **Add connection**, pastes or scans it, reads the confirmation (gateway origin, server ID, public broadcast, no credential, you are not contacted), and taps **Add feed**. The phone validates your manifest through the gateway, resolves plugin support, reads a snapshot, and streams while the app is open.
 
-`GET /v1/manifest` on the template API returns the same reference.
-
-## 3. Add the feed in SAC
-
-There is no deep link. The owner must be on **Add connection**.
-
-1. **Connections → Add connection**.
-2. Paste the `seekervault://feed?…` line (or scan a QR of it).
-3. Confirm **Add this public feed?** — gateway origin, server ID, public broadcast, no credential, publisher is not contacted.
-4. Tap **Add feed**.
-
-The new connection opens with display name, **Sandbox**, and required plugin `jupiter.swap`. Snapshot and live stream start without restarting the app.
-
-## 4. Publish a request
-
-Primary path: `POST /v1/requests` with `Idempotency-Key`. `/v1/signals` is a compatibility alias.
+## 4. Publish a sandbox request
 
 ```sh
-curl -sS http://127.0.0.1:8092/v1/requests \
-  -H "Authorization: Bearer $PUBLISHER_API_TOKEN" \
+curl -sS --fail-with-body "$PUBLISH_URL/seekervault.gateway.v1.PublisherService/PublishProposal" \
   -H 'Content-Type: application/json' \
-  -H 'Idempotency-Key: desk-1-sol-usdc-demo' \
-  -d '{
-    "expires_at": "2030-01-01T00:00:00Z",
-    "note": "trimming SOL into USDC on the bounce",
-    "terms": {
-      "input_mint": "So11111111111111111111111111111111111111112",
-      "input_decimals": "9",
-      "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "output_decimals": "6",
-      "max_slippage_bps": "50"
-    }
-  }'
+  -H "Authorization: Bearer $PUBLISHER_CREDENTIAL" \
+  -d "{\"proposal\":{\"serverId\":\"$PUBLISHER_ID\",\"channel\":\"$CHANNEL\",
+       \"proposalId\":\"$PROPOSAL_ID\",\"revision\":\"1\",
+       \"operation\":\"swap\",\"pluginId\":\"jupiter.swap\",
+       \"status\":\"PROPOSAL_STATUS_OPEN\",
+       \"createdAt\":\"2030-01-02T09:00:00Z\",\"updatedAt\":\"2030-01-02T09:00:00Z\",
+       \"expiresAt\":\"2030-01-03T09:00:00Z\",
+       \"publisherNote\":\"trimming SOL into USDC on the bounce\",
+       \"values\":[{\"key\":\"input_mint\",\"text\":\"So11111111111111111111111111111111111111112\"},
+                   {\"key\":\"input_decimals\",\"text\":\"9\"},
+                   {\"key\":\"output_mint\",\"text\":\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"},
+                   {\"key\":\"output_decimals\",\"text\":\"6\"},
+                   {\"key\":\"max_slippage_bps\",\"text\":\"50\"}]}}"
+# {"status":"PUBLISH_STATUS_STORED","revision":"1","snapshotSequence":"2"}
 ```
 
-Or `sdk.Client.CreateRequest`, or:
-
-```sh
-publishctl create --in 2h --note "trimming SOL into USDC on the bounce" \
-  --term input_mint=So11111111111111111111111111111111111111112 \
-  --term input_decimals=9 \
-  --term output_mint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --term output_decimals=6 \
-  --term max_slippage_bps=50
-```
-
-There is **no amount** and no side. Amount is chosen on each phone.
-
-Unknown JSON fields are refused. A body that includes `amount` is a 400, not a silent drop.
-
-Status codes: **201** created and published, **202** stored and not yet published, **502** created and gateway-refused, **200** idempotent replay.
+There is **no amount** and no side; both are chosen on each phone. The codec is strict: a field the contract does not have, such as `amount`, is refused, never dropped. `PublishRequest` and `CancelRequest` take the common envelope at the same paths; `PublishProposal` is a compatibility adapter over the same row, used here for its compact shape. Swap terms: [Jupiter swap](/docs/jupiter-swap).
 
 ## 5. Review in sandbox
 
-1. Open the signal from Home or the feed’s **Signals** row.
-2. Under **Your part**, enter an amount (and slippage if shown).
-3. Tap **Get a quote and prepare**. The phone fetches a live quote and reads the bytes.
-4. Read the facts, then the rules panel.
-5. Tap **Simulate** (not **Approve and swap**).
+The owner opens the signal, enters an amount, prepares, reads the facts and the rules panel, and simulates instead of approving. Activity shows **Simulated**, with no signature and no explorer link. You are not notified: feed result handling is `DEVICE_LOCAL`, and the gateway never learns a subscriber's decision.
 
-Expected Activity: **Simulated. This feed is a sandbox, so nothing was signed and nothing was sent.** No explorer link.
+## 6. Update and withdraw
 
-The publisher is **not** notified. Feed result handling is `DEVICE_LOCAL`.
-
-Simulate spends the proposal on this device. The same request is not then executable as a real send on this phone.
-
-## 6. Revise and cancel
-
-Replace the whole statement (revision bumps only if content changed):
+Send the complete document again with `"revision":"2"` and a moved `updatedAt`; the identity and `createdAt` stay fixed. Identical content at the held revision answers `PUBLISH_STATUS_UNCHANGED` and wakes nobody. Withdraw with the next revision:
 
 ```sh
-curl -sS -X PUT http://127.0.0.1:8092/v1/requests/$ID \
-  -H "Authorization: Bearer $PUBLISHER_API_TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "expires_at": "2030-01-01T00:00:00Z",
-    "note": "Tightening the slippage cap to 0.3%.",
-    "terms": {
-      "input_mint": "So11111111111111111111111111111111111111112",
-      "input_decimals": "9",
-      "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "output_decimals": "6",
-      "max_slippage_bps": "30"
-    }
-  }'
+curl -sS --fail-with-body "$PUBLISH_URL/seekervault.gateway.v1.PublisherService/CancelProposal" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $PUBLISHER_CREDENTIAL" \
+  -d "{\"proposalId\":\"$PROPOSAL_ID\",\"revision\":\"3\"}"
+# {"status":"PUBLISH_STATUS_STORED","proposal":{…"status":"PROPOSAL_STATUS_CANCELLED"…},"snapshotSequence":"4"}
 ```
 
-Withdraw:
+Withdrawal is final for that ID. A subscriber's own simulate or hide changes only that device.
+
+## 7. Heartbeat
+
+The gateway never contacts you. Every authenticated call is a check-in; between publications:
 
 ```sh
-curl -sS -X POST http://127.0.0.1:8092/v1/requests/$ID/cancel \
-  -H "Authorization: Bearer $PUBLISHER_API_TOKEN"
+curl -sS "$PUBLISH_URL/seekervault.gateway.v1.PublisherService/Heartbeat" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $PUBLISHER_CREDENTIAL" -d '{}'
+# {"intervalSeconds":30}
 ```
 
-Broadcast cancellation changes the source document for everyone. One subscriber’s hide or simulate changes only that device.
+Call it on the interval the answer names. Three missed intervals and phones show "Feed offline · N pending"; what you published stays readable.
 
-Retry a refused publication: `POST /v1/requests/{id}/retry`.
+## 8. Read it back
 
-## Prediction template (read-only writes)
+```sh
+curl -sS "$PUBLIC_GATEWAY/seekervault.gateway.v1.FeedService/ListRequests" \
+  -H 'Content-Type: application/json' -d "{\"channel\":\"$CHANNEL\"}"
+curl -sS "$PUBLIC_GATEWAY/seekervault.gateway.v1.FeedService/GetFeedStatus" \
+  -H 'Content-Type: application/json' -d "{\"channels\":[\"$CHANNEL\"]}"
+```
 
-`cmd/prediction` discovers markets itself. `POST /v1/requests`, `PUT`, and cancel answer **403 `written_by_discovery`**. Use `GET /v1/discovery` and `POST /v1/discovery/poll`. It needs its **own** server ID and credential.
+No credential: this is what every phone reads.
 
-It publishes no side. The phone reads the market from the provider when the owner looks.
+## Refusals
 
-## Promoting to production
+Every refusal is JSON with a Connect `code` and a `GatewayErrorDetail` naming the problem and, where it matters, `heldRevision`.
 
-Production is a **new deployment promise**: a different `PUBLISHER_ENVIRONMENT`, typically a different server ID. The gateway refuses changing environments on an existing server ID. On the phone, only the owner switches a connection from Sandbox to Production when the manifest serves both.
+| Problem | Meaning |
+| --- | --- |
+| `unauthenticated` (401) | No, wrong, or revoked credential; one answer for all three |
+| `other_server`, `foreign_channel` (403) | Not your server or channel |
+| `stale_revision`, `revision_conflict`, `cancelled` | Read `heldRevision`; republish higher, or use a new ID |
+| `other_gateway`, `other_environment` | Wrong origin, or a changed environment set |
+| `unknown field "amount"` (400) | Strict codec |
+| `too_many_requests` (429) | 2 per second with 20 in hand |
+| `too_many_proposals` | 200 open per channel; withdraw some |
 
-Do not describe that switch as “point it at devnet.”
+Retry transport failures with backoff, with the **same revision and content**, until you learn the outcome.
+
+## Rotate before revoke
+
+Ask the operator to **add** a credential (`rotate`), install it, confirm you publish with it, then have the old one revoked. The reverse order is an outage. A lost credential is the same procedure; it exists only as a hash.
+
+## If the gateway loses its data
+
+A self-hosted gateway on a lost volume forgets registrations: your feed reads as unknown and publications answer `unauthenticated`. Recovery is the onboarding conversation again under the **same server UUID**, so subscribers keep the feed they added. Nothing restores the old credential; republish your manifest and open items with the new one.
+
+## Or start from a demo
+
+`demo-copytrading/` and `demo-prediction/` do all of the above from configuration, with a durable outbox and heartbeat, and publish through their own `POST /v1/requests`. Copy one out beside `publisher-support/`. See [Examples](/docs/examples).

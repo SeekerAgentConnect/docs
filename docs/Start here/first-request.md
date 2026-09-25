@@ -1,53 +1,78 @@
 ---
 title: Your first request
-excerpt: Pick one path, complete it end to end, and confirm the result landed where that mode says it should.
+excerpt: The fastest path to a reviewed request — run the MCP server, pair the phone, ask for a signature, approve it, and read the result back.
 hidden: false
 ---
 
-Use this page to choose a first path. Each walkthrough below is complete: prerequisites, commands, what you tap in SAC, and where the result goes.
+The shortest path from nothing to a reviewed result is a direct connection to the MCP server and one signed message. It needs no gateway, no publisher credential, no funds, and no Solana RPC endpoint.
 
-## 1. Private independent server (invitation to result)
+## Before you start
 
-For a backend that should reach **one confirmed device** and read the declared outcome.
+- Node 24.21.0 and pnpm, or Docker.
+- The SAC app on the phone, and a way for the phone to reach the server: `adb reverse tcp:8080 tcp:8080` over USB with a debug build, or a trusted HTTPS origin in `SIDECAR_PUBLIC_URL`. A self-signed certificate is refused.
+- Seed Vault Wallet connected on the **Wallet** tab, so the request can name your address.
 
-1. A gateway operator registers your server and gives you a publisher credential.
-2. Your backend publishes a `gateway_private` manifest and creates an invitation with the Go Server SDK.
-3. You share the hosted link or QR. The owner confirms **Connect** in SAC.
-4. The backend stores the completed `connection_id` and sends a request to **that exact binding**.
-5. The owner reviews it. In sandbox the phone records **Simulated** and does not open the wallet. In production they approve and the wallet signs.
-6. The backend polls `Request` for the declared result.
+## 1. Run the MCP server
 
-Full steps: [Private invitation to result](/docs/private-invitation-walkthrough).
+From a checkout:
 
-Opening the invitation does not authorize wallet operations.
+```bash
+pnpm install --frozen-lockfile
+cp .env.example .env    # then replace both token placeholders
+pnpm dev:mcp-server
+```
 
-## 2. Public feed in sandbox
+Or with the Docker preset:
 
-For a publisher that broadcasts the same request to every subscriber.
+```bash
+cp deploy/mcp/.env.example deploy/mcp/.env    # then replace the tokens
+docker compose --env-file deploy/mcp/.env -f deploy/mcp/compose.yaml up -d --build
+```
 
-1. Register as a publisher on a broadcast gateway.
-2. Run the CopyTrading template with `PUBLISHER_ENVIRONMENT=sandbox`.
-3. Add the printed `seekervault://feed?…` reference in **Add connection**.
-4. Publish a request with `POST /v1/requests` (or `sdk.Client.CreateRequest`).
-5. On the phone, open the signal, enter an amount, tap **Get a quote and prepare**, then **Simulate**.
-6. Activity shows **Simulated**. Nothing was signed or sent. The publisher is not told what you did.
+`curl -s http://127.0.0.1:8080/healthz` prints `{"status":"ok"}`. Until a phone pairs, the startup log says `no phone is paired`, and agents get `NOT_PAIRED`.
 
-Full steps: [Public feed sandbox](/docs/public-feed-walkthrough).
+## 2. Create a pairing link
 
-Sandbox is not devnet. The quote and bytes are the live mainnet path; the wallet is not opened.
+```bash
+pnpm pair
+```
 
-## 3. Direct sidecar and MCP
+In Docker: `docker compose --env-file deploy/mcp/.env -f deploy/mcp/compose.yaml exec mcp-server node mcp-server/dist/cli.js pair`.
 
-For an agent that talks to **your** sidecar.
+Either prints a QR code, the `seekervault://pair?…` line, and an HTTPS pairing page on the server. A connected agent can do the same by calling `vault_create_pairing_link`, which returns `pairing_uri` and `https_url`. The code works once, for ten minutes, and a newer code replaces it. Keep it private: whoever pairs with it first becomes the paired phone.
 
-1. Start the sidecar with `MCP_TOKEN` and a distinct `PHONE_TOKEN`.
-2. Pair the phone with `pnpm pair` (or the packaged pairing CLI).
-3. Connect Seed Vault Wallet on **Wallet**.
-4. Ask the agent to call `vault_sign_message` (or `pnpm agent sign`).
-5. In SAC, open the request, tap **Approve and sign**, and confirm in the wallet.
-6. The agent reads the signature with `vault_get_request`.
+## 3. Pair in Add connection
 
-Full steps: [Direct sidecar and MCP](/docs/direct-sidecar-walkthrough).
+On the phone, open **Home → Add connection**. Scan the QR code, or paste the `seekervault://pair?…` line and tap **Continue**. Check the address and server ID on **Pair with this server?**, then tap **Pair**. On the server, `pnpm pair status` shows the paired phone.
+
+## 4. Have an agent create a request
+
+Any MCP client that holds `MCP_TOKEN` can call `vault_sign_message`. Without one, use the test agent from the same checkout:
+
+```bash
+pnpm agent address          # the wallet you connected, and its network
+pnpm agent sign "hello"     # prints the request as PENDING
+```
+
+Nothing is signed yet. The request waits on the phone.
+
+## 5. Review on the phone
+
+The request appears on Home and in the **Inbox**: at once if the server serves live updates, otherwise when the app opens, when you open the connection, or when you pull to refresh. Open it, read the message, tap **Approve and sign**, and confirm in Seed Vault Wallet. Declining in the wallet is a rejection.
+
+## 6. Read the result back
+
+```bash
+pnpm agent get <id>
+```
+
+Once you have answered, `status` is `COMPLETED` — with `signature`, `wallet`, `signed_message_base64`, and `signature_verified` — or `REJECTED`, and `terminal` is true. An MCP client reads the same through `vault_get_request`.
+
+## Other first paths
+
+- **A transfer.** Set `SOLANA_RPC_URL`, then `pnpm agent transfer <to> <amount> --wallet <address> --network <name>`. The review says **Approve and send**.
+- **A public feed in sandbox.** Run a feed demo, add its `seekervault://feed?…` reference, and **Simulate** a signal. Nothing is signed. See the [public feed walkthrough](/docs/public-feed-walkthrough).
+- **SKR staking.** Pair the staking server as a second connection and have the agent call `request_stake`. See [SKR staking](/docs/skr-staking).
 
 ## After the first request
 
