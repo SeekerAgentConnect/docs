@@ -60,6 +60,16 @@
 .card, .theme-admonition { border-radius: 16px; }
 .alert { border-left-width: 0; }
 
+/* Footer: flat page background with a top border, matching the navbar */
+.footer {
+  --ifm-footer-background-color: var(--ifm-background-color);
+  --ifm-footer-color: var(--ifm-font-color-base);
+  --ifm-footer-title-color: var(--ifm-font-color-base);
+  --ifm-footer-link-color: var(--ifm-color-emphasis-600);
+  --ifm-footer-link-hover-color: var(--ifm-color-primary);
+  border-top: 1px solid var(--ifm-toc-border-color);
+}
+
 /* Wide reference tables scroll instead of overflowing on narrow screens. */
 .markdown table {
   display: block;
