@@ -1,8 +1,3 @@
-- request-contract
-- manifest-contract
-- sdk-and-api
-- authentication-roles
-- errors
-- limits
-- environments
+- protocol
+- errors-and-limits
 - source-mapping
