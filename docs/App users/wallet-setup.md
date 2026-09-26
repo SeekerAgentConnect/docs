@@ -3,7 +3,6 @@ title: Connect your wallet
 excerpt: SAC uses the wallet you already have. It never asks for a seed phrase.
 hidden: false
 ---
-
 On a Solana Seeker that wallet is **Seed Vault Wallet**. SAC never creates a wallet and never holds a key. No screen in SAC ever asks for a seed phrase or a private key. If something does, it is not this app.
 
 ## Connect
@@ -28,9 +27,9 @@ Until a wallet is connected, an agent that asks for your address is told there i
 
 ## If something goes wrong
 
-| The app says | What to do |
-| --- | --- |
-| No wallet app answered | Install or open Seed Vault Wallet, then try again |
-| The wallet didn't give an account | You left without choosing. Tap **Connect wallet** again |
-| The wallet doesn't serve this network | Pick a network the wallet offers |
-| Couldn't tell N connections | A server was unreachable. Tap **Tell them again** once it is back |
+| The app says                          | What to do                                                        |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| No wallet app answered                | Install or open Seed Vault Wallet, then try again                 |
+| The wallet didn't give an account     | You left without choosing. Tap **Connect wallet** again           |
+| The wallet doesn't serve this network | Pick a network the wallet offers                                  |
+| Couldn't tell N connections           | A server was unreachable. Tap **Tell them again** once it is back |
