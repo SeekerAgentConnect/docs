@@ -75,6 +75,21 @@ const config: Config = {
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
         {
+          href: 'https://seeker-gateway-sg8g3.ondigitalocean.app/admin/',
+          label: 'Gateway',
+          position: 'left',
+        },
+        {
+          href: 'https://prediction-demo-quni7.ondigitalocean.app/trader',
+          label: 'Prediction Demo',
+          position: 'left',
+        },
+        {
+          href: 'https://signals-demo-fzs2q.ondigitalocean.app/trader',
+          label: 'Trade Signals Demo',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/BrRenat/SeekerAgentConnect',
           label: 'GitHub',
           position: 'right',
