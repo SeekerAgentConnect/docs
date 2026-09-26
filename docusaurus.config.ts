@@ -3,7 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // Set DOCS_URL / DOCS_BASE_URL in CI to match where the site is hosted.
-const url = process.env.DOCS_URL ?? 'https://brrenat.github.io';
+const url = process.env.DOCS_URL ?? 'https://seekeragentconnect.github.io';
 const baseUrl = process.env.DOCS_BASE_URL ?? '/docs/';
 
 // The landing page lives in SeekerAgentConnect/landing and is published separately.
@@ -21,8 +21,8 @@ const config: Config = {
 
   url,
   baseUrl,
-  organizationName: 'BrRenat',
-  projectName: 'SeekerAgentConnectDocs',
+  organizationName: 'SeekerAgentConnect',
+  projectName: 'docs',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
@@ -48,10 +48,10 @@ const config: Config = {
       'classic',
       {
         docs: {
-          // Pages set `slug: /<file-stem>`, so URLs stay /docs/<slug> as on ReadMe.
-          routeBasePath: 'docs',
+          // baseUrl is already /docs/, so docs live at the site root: URLs stay /docs/<slug> as on ReadMe.
+          routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/BrRenat/SeekerAgentConnectDocs/edit/v1.0/',
+          editUrl: 'https://github.com/SeekerAgentConnect/docs/edit/v1.0/',
         },
         blog: false,
         theme: {
