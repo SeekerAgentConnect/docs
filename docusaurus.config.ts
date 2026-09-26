@@ -1,15 +1,13 @@
-import {copyFile} from 'node:fs/promises';
-import {join} from 'node:path';
 import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config, Plugin} from '@docusaurus/types';
+import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // Set DOCS_URL / DOCS_BASE_URL in CI to match where the site is hosted.
 const url = process.env.DOCS_URL ?? 'https://brrenat.github.io';
 const baseUrl = process.env.DOCS_BASE_URL ?? '/SeekerAgentConnectDocs/';
 
-// Standalone landing pages served from the site root; index.html embeds sac-interactive-screen.html.
-const landingFiles = ['index.html', 'sac-interactive-screen.html'];
+// The landing page lives in SeekerAgentConnect/landing and is published separately.
+const landingUrl = 'https://seekeragentconnect.github.io/landing/';
 
 const config: Config = {
   title: 'Seeker Agent Connect',
@@ -63,48 +61,6 @@ const config: Config = {
     ],
   ],
 
-  clientModules: ['./src/landing-reload.ts'],
-
-  plugins: [
-    // Serve the standalone landing page (landing/index.html) at `/`; the docs
-    // live under /docs. Runs after static generation so it replaces the
-    // placeholder src/pages/index.tsx output.
-    () => ({
-      name: 'landing-page',
-      async postBuild({outDir}) {
-        for (const file of landingFiles) {
-          await copyFile(join(__dirname, 'landing', file), join(outDir, file));
-        }
-      },
-      // `npm start` never runs postBuild, so serve the same file from the dev server.
-      configureWebpack() {
-        return {
-          devServer: {
-            setupMiddlewares: (middlewares: {name?: string; middleware: unknown}[]) => {
-              middlewares.unshift({
-                name: 'landing-page',
-                middleware: (
-                  req: {method?: string; path: string},
-                  res: {sendFile: (path: string) => void},
-                  next: () => void,
-                ) => {
-                  const file = req.path === baseUrl ? 'index.html' : req.path.slice(baseUrl.length);
-                  if (req.method === 'GET' && req.path.startsWith(baseUrl) && landingFiles.includes(file)) {
-                    res.sendFile(join(__dirname, 'landing', file));
-                  } else {
-                    next();
-                  }
-                },
-              });
-              return middlewares;
-            },
-          },
-          // `devServer` is merged into webpack-dev-server's options but is not in Docusaurus' types.
-        } as unknown as ReturnType<NonNullable<Plugin['configureWebpack']>>;
-      },
-    }),
-  ],
-
   themeConfig: {
     colorMode: {
       defaultMode: 'dark',
@@ -118,6 +74,8 @@ const config: Config = {
         srcDark: 'img/logo-dark.svg',
         width: 32,
         height: 32,
+        href: landingUrl,
+        target: '_self',
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
@@ -164,6 +122,7 @@ const config: Config = {
           title: 'More',
           items: [
             {label: 'Source mapping', to: '/docs/source-mapping'},
+            {label: 'Website', href: landingUrl},
             {label: 'GitHub', href: 'https://github.com/BrRenat/SeekerAgentConnect'},
           ],
         },
