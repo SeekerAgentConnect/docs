@@ -8,6 +8,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 const url = process.env.DOCS_URL ?? 'https://brrenat.github.io';
 const baseUrl = process.env.DOCS_BASE_URL ?? '/SeekerAgentConnectDocs/';
 
+// Standalone landing pages served from the site root; index.html embeds sac-interactive-screen.html.
+const landingFiles = ['index.html', 'sac-interactive-screen.html'];
+
 const config: Config = {
   title: 'Seeker Agent Connect',
   tagline:
@@ -69,7 +72,9 @@ const config: Config = {
     () => ({
       name: 'landing-page',
       async postBuild({outDir}) {
-        await copyFile(join(__dirname, 'landing/index.html'), join(outDir, 'index.html'));
+        for (const file of landingFiles) {
+          await copyFile(join(__dirname, 'landing', file), join(outDir, file));
+        }
       },
       // `npm start` never runs postBuild, so serve the same file from the dev server.
       configureWebpack() {
@@ -83,8 +88,9 @@ const config: Config = {
                   res: {sendFile: (path: string) => void},
                   next: () => void,
                 ) => {
-                  if (req.method === 'GET' && (req.path === baseUrl || req.path === `${baseUrl}index.html`)) {
-                    res.sendFile(join(__dirname, 'landing/index.html'));
+                  const file = req.path === baseUrl ? 'index.html' : req.path.slice(baseUrl.length);
+                  if (req.method === 'GET' && req.path.startsWith(baseUrl) && landingFiles.includes(file)) {
+                    res.sendFile(join(__dirname, 'landing', file));
                   } else {
                     next();
                   }
