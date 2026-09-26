@@ -4,6 +4,8 @@ This repository is the public **Seeker Agent Connect (SAC)** documentation, buil
 
 The app reviews and authorizes requests from independent servers. Seed Vault Wallet still signs. Source of truth for behavior is [BrRenat/SeekerAgentConnect](https://github.com/BrRenat/SeekerAgentConnect) (formerly SeekerAgentWallet). The revision these pages were written against is recorded on [Source mapping](docs/reference/source-mapping.md).
 
+The landing page is in [SeekerAgentConnect/landing](https://github.com/SeekerAgentConnect/landing) and published at <https://seekeragentconnect.github.io/landing/>; the navbar logo and the footer's **Website** link point there. It links to pages here by absolute URL, so update it when a slug changes.
+
 ## Repository layout
 
 | Path | Purpose |
@@ -11,8 +13,7 @@ The app reviews and authorizes requests from independent servers. Seed Vault Wal
 | `docs/` | Guides, grouped by reader: `start-here`, `app-users`, `your-mcp-server`, `feed-server`, `recipes`, `reference` |
 | `docs/*/_category_.json` | Sidebar category label and position |
 | `docusaurus.config.ts`, `sidebars.ts` | Site configuration; the sidebar is generated from the folders |
-| `landing/index.html` | Standalone landing page (links point at `/docs` and SeekerAgentConnect), served at `/` (copied over the build output by the `landing-page` plugin) |
-| `src/`, `static/` | Theme CSS, the `/docs` redirect to Welcome, static assets |
+| `src/`, `static/` | Theme CSS, the `/` and `/docs` redirects to Welcome, static assets |
 | `scripts/check-docs.mjs` | Front matter, slug, sidebar-position, and placeholder checks |
 | `.github/workflows/docs.yml` | Checks and build on pull requests; GitHub Pages deploy from `v1.0` |
 
@@ -26,7 +27,7 @@ Requires Node 20 or newer.
 
 ```sh
 npm ci
-npm start           # live preview: landing at http://localhost:3000/SeekerAgentConnectDocs/, docs under /docs
+npm start           # live preview at http://localhost:3000/SeekerAgentConnectDocs/docs/getting-started
 npm run check       # front matter, slugs, sidebar positions, placeholders
 npm run typecheck
 npm run build       # production build; fails on broken links and anchors
