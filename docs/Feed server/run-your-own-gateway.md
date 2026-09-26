@@ -1,6 +1,6 @@
 ---
 title: Run your own gateway
-excerpt: One Docker Compose project, one command to register a publisher. You only need this if you do not want to use the shared gateway.
+excerpt: One Docker Compose project, one command to register a publisher as Public or Restricted. You only need this if you do not want to use the shared gateway.
 hidden: false
 ---
 
@@ -31,13 +31,30 @@ docker compose --env-file deploy/feed/.env -f deploy/feed/compose.yaml \
   --server 3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d --label "copy trading" --host https://copytrading.example.com
 ```
 
-It prints the server ID, the channel, and the credential, once. Hand the publisher those, plus your public gateway address. To let an MCP server wake phones through your gateway, register it with `--for relay` instead. `rotate` adds a second credential, `revoke` ends one, `list` shows what is registered.
+It prints the server ID, the channel, and the credential, once. Hand the publisher those, plus your public gateway address. To let an MCP server wake phones through your gateway, register it with `--for relay` instead. `rotate` adds a second credential, `revoke` ends one, `list` shows what is registered, and marks each Restricted publisher with its origin and live grant count.
 
 Prefer a browser? Set `BROADCAST_ADMIN_PASSWORD_HASH` (print one with `gateway-ctl password`) and the same operations appear on `/admin`.
 
+## Public or Restricted
+
+A publisher is registered **Public** unless you say otherwise. To register a subscriber-only feed, add the policy and the publisher's authentication origin, its `PUBLISHER_AUTH_ORIGIN` character for character:
+
+```sh
+docker compose --env-file deploy/feed/.env -f deploy/feed/compose.yaml \
+  --profile operator run --rm gateway-ctl register \
+  --server 3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d --label "signals" \
+  --access restricted --auth-origin https://auth.example.com
+```
+
+To switch an existing publisher, use `access --server <id> --access public|restricted` with the same `--auth-origin` rule. `--auth-origin` is required for Restricted and refused for Public. The origin must be HTTPS with no path, query or fragment; plain HTTP is accepted only on loopback.
+
+You control only the policy. Which subscribers may read is the publisher's decision, made on its own server; your gateway enforces it on every read, stream ticket and push target, and never sees a wallet address. A policy change retires the live streams issued under the old policy but does not revoke grants already issued; ask the publisher to publish its manifest again afterwards. `BROADCAST_MAX_GRANT_HOURS` (default 24) caps how long any access grant lasts. The whole flow is on [Run a Restricted feed](/docs/restricted-feeds).
+
+On `/admin`, **Add server** has a **Who may read its feed** choice, and each publisher's page has a **Who may read** form: choose **Restricted — only devices the publisher approved**, enter the **Authentication origin**, type the server ID to confirm a change, and **Save access**.
+
 ## Push wake-ups
 
-Point `BROADCAST_PUSH_CREDENTIALS` at a Firebase service-account file, with `BROADCAST_PUSH_ENDPOINT` and `BROADCAST_PUSH_ENVIRONMENT`, and start with the `compose.push.yaml` overlay. Without it, everything works except wake-ups while the app is closed.
+Point `BROADCAST_PUSH_CREDENTIALS` at a Firebase service-account file, with `BROADCAST_PUSH_ENDPOINT` and `BROADCAST_PUSH_ENVIRONMENT`, and start with the `compose.push.yaml` overlay. Without it, everything works except wake-ups while the app is closed. A Public feed's wake-ups go to a shared topic. A Restricted feed has no topic: each approved device registers its own push target under its grant, and the target is dropped when the grant ends.
 
 ## Storage
 

@@ -1,8 +1,10 @@
 ---
 title: Publish your first feed
-excerpt: A manifest, a sandbox signal, an update, a withdrawal, and a heartbeat, with nothing but curl.
+excerpt: A Public feed with nothing but curl. A manifest, a sandbox signal, an update, a withdrawal, and a heartbeat.
 hidden: false
 ---
+
+This walkthrough publishes a **Public** feed: anyone with the link can read it. For a subscriber-only feed, finish this page first, then follow [Run a Restricted feed](/docs/restricted-feeds); publishing works the same way, and a Restricted feed adds wallet proof and device approval.
 
 You need the three values from [registration](/docs/feed-gateway#getting-registered), `curl`, and SAC on a phone.
 
@@ -36,7 +38,7 @@ The environment set is fixed for this server ID. Production is a second registra
 seekervault://feed?v=1&gateway=https://feeds.example.com&server=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 ```
 
-A subscriber pastes it into **Add connection** and taps **Add feed**.
+A subscriber pastes it into **Add connection** and taps **Add feed**. Because this feed is Public, that is all they do.
 
 ## 3. A signal
 

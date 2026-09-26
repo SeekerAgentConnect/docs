@@ -1,10 +1,12 @@
 ---
 title: Prediction markets, your way
-excerpt: Run the Prediction demo with your own filters, or curate markets for your own audience. Subscribers pick the side and the stake.
+excerpt: A Public feed. Run the Prediction demo with your own filters, or curate markets for your own audience. Subscribers pick the side and the stake.
 hidden: false
 ---
 
 **The idea.** Prediction markets move fast and there are thousands of them. The Prediction demo watches the listing for you, publishes the ones that match your filters as signals, and everyone who added your feed can take a position from their own wallet in two taps. You publish the market; each subscriber chooses Yes or No and how much.
+
+This demo publishes a **Public** feed: anyone with the link can read it, and nobody has to prove a wallet or wait for approval. It is unchanged by Restricted feeds. To limit a feed to subscribers you approve, see [Run a Restricted feed](/docs/restricted-feeds) and the [CopyTrading recipe](/docs/recipe-copytrading).
 
 Two ways to use it.
 
@@ -37,7 +39,7 @@ Same server, but you pick the markets instead of a filter. The demo's **trader p
 seekervault://feed?v=1&gateway=https://feeds.example.com&server=<your server ID>
 ```
 
-Anyone who adds it sees every market you publish, as a **Prediction signal** in the Inbox, with your note.
+Anyone who adds it sees every market you publish, as a **Prediction signal** in the Inbox, with your note. The feed is Public, so there is nobody to approve.
 
 ## What a subscriber does
 
