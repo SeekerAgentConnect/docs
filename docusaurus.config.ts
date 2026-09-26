@@ -1,7 +1,7 @@
 import {copyFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import type {Config, Plugin} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // Set DOCS_URL / DOCS_BASE_URL in CI to match where the site is hosted.
@@ -70,6 +70,31 @@ const config: Config = {
       name: 'landing-page',
       async postBuild({outDir}) {
         await copyFile(join(__dirname, 'landing/index.html'), join(outDir, 'index.html'));
+      },
+      // `npm start` never runs postBuild, so serve the same file from the dev server.
+      configureWebpack() {
+        return {
+          devServer: {
+            setupMiddlewares: (middlewares: {name?: string; middleware: unknown}[]) => {
+              middlewares.unshift({
+                name: 'landing-page',
+                middleware: (
+                  req: {method?: string; path: string},
+                  res: {sendFile: (path: string) => void},
+                  next: () => void,
+                ) => {
+                  if (req.method === 'GET' && (req.path === baseUrl || req.path === `${baseUrl}index.html`)) {
+                    res.sendFile(join(__dirname, 'landing/index.html'));
+                  } else {
+                    next();
+                  }
+                },
+              });
+              return middlewares;
+            },
+          },
+          // `devServer` is merged into webpack-dev-server's options but is not in Docusaurus' types.
+        } as unknown as ReturnType<NonNullable<Plugin['configureWebpack']>>;
       },
     }),
   ],

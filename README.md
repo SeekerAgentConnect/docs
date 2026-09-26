@@ -26,7 +26,7 @@ Requires Node 20 or newer.
 
 ```sh
 npm ci
-npm start           # live preview at http://localhost:3000/SeekerAgentConnectDocs/
+npm start           # live preview: landing at http://localhost:3000/SeekerAgentConnectDocs/, docs under /docs
 npm run check       # front matter, slugs, sidebar positions, placeholders
 npm run typecheck
 npm run build       # production build; fails on broken links and anchors
