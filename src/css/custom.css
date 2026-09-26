@@ -1,24 +1,73 @@
+/* Seeker Agent Connect v4 — Docusaurus (Infima) theme */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
 :root {
-  --ifm-color-primary: #1f8a70;
-  --ifm-color-primary-dark: #1c7c65;
-  --ifm-color-primary-darker: #1a755f;
-  --ifm-color-primary-darkest: #15614e;
-  --ifm-color-primary-light: #22987b;
-  --ifm-color-primary-lighter: #249f81;
-  --ifm-color-primary-lightest: #29b392;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-color-primary: #4f5c00;
+  --ifm-color-primary-dark: #475300;
+  --ifm-color-primary-darker: #434e00;
+  --ifm-color-primary-darkest: #374000;
+  --ifm-color-primary-light: #576500;
+  --ifm-color-primary-lighter: #5b6a00;
+  --ifm-color-primary-lightest: #677800;
+  --ifm-background-color: #f7f7f7;
+  --ifm-background-surface-color: #ffffff;
+  --ifm-font-color-base: #1b1b1b;
+  --ifm-color-emphasis-600: #5a5a5a;
+  --ifm-toc-border-color: #e2e2e2;
+  --ifm-hr-background-color: #e2e2e2;
+  --ifm-font-family-base: Roboto, system-ui, sans-serif;
+  --ifm-heading-font-family: Roboto, system-ui, sans-serif;
+  --ifm-font-family-monospace: 'Roboto Mono', ui-monospace, monospace;
+  --ifm-heading-font-weight: 400;
+  --ifm-global-radius: 8px;
+  --ifm-card-border-radius: 16px;
+  --ifm-code-border-radius: 8px;
+  --ifm-code-font-size: 92%;
+  --ifm-navbar-shadow: none;
+  --ifm-link-decoration: none;
+  --docusaurus-highlighted-code-line-bg: rgba(79, 92, 0, 0.12);
 }
 
 [data-theme='dark'] {
-  --ifm-color-primary: #3ccf9f;
-  --ifm-color-primary-dark: #30c593;
-  --ifm-color-primary-darker: #2dba8b;
-  --ifm-color-primary-darkest: #259972;
-  --ifm-color-primary-light: #57d6ac;
-  --ifm-color-primary-lighter: #64d9b2;
-  --ifm-color-primary-lightest: #8ae3c5;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #c2e60f;
+  --ifm-color-primary-dark: #afcf0e;
+  --ifm-color-primary-darker: #a5c30d;
+  --ifm-color-primary-darkest: #88a10b;
+  --ifm-color-primary-light: #cdf01d;
+  --ifm-color-primary-lighter: #cff129;
+  --ifm-color-primary-lightest: #d7f34b;
+  --ifm-background-color: #121212;
+  --ifm-background-surface-color: #1c1c1c;
+  --ifm-navbar-background-color: #121212;
+  --ifm-footer-background-color: #121212;
+  --ifm-font-color-base: #ffffff;
+  --ifm-color-emphasis-600: #cacaca;
+  --ifm-menu-color: #cacaca;
+  --ifm-toc-border-color: #2a2a2a;
+  --ifm-hr-background-color: #2a2a2a;
+  --ifm-color-content-secondary: #cacaca;
+  --ifm-code-background: #1c1c1c;
+  --ifm-link-color: #e7fc6e;
+  --ifm-link-hover-color: #c2e60f;
+  --docusaurus-highlighted-code-line-bg: rgba(194, 230, 15, 0.12);
+}
+
+/* Lime is a fill; ink on lime is always #1b1b1b */
+[data-theme='dark'] .button--primary { color: #1b1b1b; }
+.button { border-radius: 8px; font-weight: 500; }
+.navbar { border-bottom: 1px solid var(--ifm-toc-border-color); }
+.menu__link--active:not(.menu__link--sublist) { font-weight: 500; }
+.card, .theme-admonition { border-radius: 16px; }
+.alert { border-left-width: 0; }
+
+/* Footer: flat page background with a top border, matching the navbar */
+.footer {
+  --ifm-footer-background-color: var(--ifm-background-color);
+  --ifm-footer-color: var(--ifm-font-color-base);
+  --ifm-footer-title-color: var(--ifm-font-color-base);
+  --ifm-footer-link-color: var(--ifm-color-emphasis-600);
+  --ifm-footer-link-hover-color: var(--ifm-color-primary);
+  border-top: 1px solid var(--ifm-toc-border-color);
 }
 
 /* Wide reference tables scroll instead of overflowing on narrow screens. */

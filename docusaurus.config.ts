@@ -6,6 +6,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 const url = process.env.DOCS_URL ?? 'https://brrenat.github.io';
 const baseUrl = process.env.DOCS_BASE_URL ?? '/SeekerAgentConnectDocs/';
 
+// The landing page lives in SeekerAgentConnect/landing and is published separately.
+const landingUrl = 'https://seekeragentconnect.github.io/landing/';
+
 const config: Config = {
   title: 'Seeker Agent Connect',
   tagline:
@@ -60,16 +63,37 @@ const config: Config = {
 
   themeConfig: {
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Seeker Agent Connect',
       logo: {
         alt: 'Seeker Agent Connect',
-        src: 'img/favicon.svg',
+        src: 'img/logo.svg',
+        srcDark: 'img/logo-dark.svg',
+        width: 32,
+        height: 32,
+        href: landingUrl,
+        target: '_self',
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
+        {
+          href: 'https://seeker-gateway-sg8g3.ondigitalocean.app/admin/',
+          label: 'Gateway',
+          position: 'left',
+        },
+        {
+          href: 'https://prediction-demo-quni7.ondigitalocean.app/trader',
+          label: 'Prediction Demo',
+          position: 'left',
+        },
+        {
+          href: 'https://signals-demo-fzs2q.ondigitalocean.app/trader',
+          label: 'Trade Signals Demo',
+          position: 'left',
+        },
         {
           href: 'https://github.com/BrRenat/SeekerAgentConnect',
           label: 'GitHub',
@@ -78,7 +102,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'dark',
+      style: 'light',
       links: [
         {
           title: 'Start here',
@@ -98,6 +122,7 @@ const config: Config = {
           title: 'More',
           items: [
             {label: 'Source mapping', to: '/docs/source-mapping'},
+            {label: 'Website', href: landingUrl},
             {label: 'GitHub', href: 'https://github.com/BrRenat/SeekerAgentConnect'},
           ],
         },
@@ -106,7 +131,7 @@ const config: Config = {
     },
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.vsDark,
       additionalLanguages: ['bash', 'go', 'yaml', 'json'],
     },
   } satisfies Preset.ThemeConfig,
