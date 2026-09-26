@@ -1,2 +1,9 @@
 .DS_Store
 Thumbs.db
+
+# Docusaurus
+node_modules/
+build/
+.docusaurus/
+.cache-loader/
+npm-debug.log*
