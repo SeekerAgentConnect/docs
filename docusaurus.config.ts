@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 // Set DOCS_URL / DOCS_BASE_URL in CI to match where the site is hosted.
 const url = process.env.DOCS_URL ?? 'https://brrenat.github.io';
-const baseUrl = process.env.DOCS_BASE_URL ?? '/SeekerAgentConnectDocs/';
+const baseUrl = process.env.DOCS_BASE_URL ?? '/docs/';
 
 // The landing page lives in SeekerAgentConnect/landing and is published separately.
 const landingUrl = 'https://seekeragentconnect.github.io/landing/';
