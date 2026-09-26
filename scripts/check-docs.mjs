@@ -128,11 +128,9 @@ for (const [slug, page] of pages) {
 
 const required = [
   "getting-started",
-  "connection-modes",
-  "private-invitation-walkthrough",
-  "public-feed-walkthrough",
-  "direct-sidecar-walkthrough",
-  "environments",
+  "how-it-works",
+  "mcp-quickstart",
+  "publish-your-first-feed",
   "source-mapping",
   "authentication",
   "my-requests",

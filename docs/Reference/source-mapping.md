@@ -1,51 +1,29 @@
 ---
 title: Source mapping
-excerpt: Public pages mapped to SeekerAgentConnect sources at the commit they were written against. Recheck this list when the SDK or protocol changes.
+excerpt: Which repository sources each public page was written from, and the checklist for the next update.
 hidden: false
 ---
 
-Public documentation in this repository was written against **SeekerAgentConnect** commit:
-
-`ce340cdc008efef4dce3cddc591616dba1ba4012`
-
-The repository was renamed from SeekerAgentWallet; Go module paths and some in-repo links still carry the old name. Recheck the default branch before updating pages that name RPCs, environment variables, or UI labels.
-
-Internal tickets and agent notes were used only to check accuracy. They are not part of the public navigation.
+Written against **SeekerAgentConnect** commit `ce340cdc008efef4dce3cddc591616dba1ba4012`. The repository was renamed from SeekerAgentWallet; Go module paths still carry the old name.
 
 ## Mapping
 
-| Public page | Main sources |
+| Page | Sources |
 | --- | --- |
-| Getting started, how it fits together, connection modes | `README.md`, `docs/architecture.md`, `docs/wiki/server-manifests.md`, `docs/wiki/gateway-pairing.md` |
-| Capabilities, first request | `docs/wiki/common-requests.md`, `docs/wiki/execution-providers.md`, `docs/guides/server-development.md` |
-| Wallet, connecting, reviewing | `docs/guides/wallet-setup.md`, `docs/guides/pairing.md`, `docs/guides/pending-requests.md`, `docs/wiki/feed-onboarding.md`, `docs/wiki/review-sheets.md` |
-| Owner inputs, rules, outcomes | `docs/wiki/common-requests.md`, `docs/guides/policies.md`, `docs/policy.md`, `docs/guides/transfers.md`, `docs/guides/message-signing.md` |
-| Notifications, disconnecting, user troubleshooting | `docs/wiki/in-app-notifications.md`, `docs/wiki/feed-presence.md`, `docs/guides/live-background-updates.md`, `docs/guides/troubleshooting.md`, `android/app/src/main/res/values/strings.xml` |
-| Overview, manifests, request lifecycle | `docs/protocol.md`, `docs/wiki/server-manifests.md`, `proto/seekervault/request/`, `proto/seekervault/server/v1/manifest.proto` |
-| Direct Server SDK, direct server walkthrough | `server-sdk/README.md`, `server-sdk/src/index.ts`, `docs/development/server-sdk.md`, `docs/integrations/server-sdk.md` |
-| Public feed walkthrough, examples | `docs/guides/server-development.md`, `feed-gateway/README.md`, `docs/integrations/signal-api.md`, `demo-copytrading/`, `demo-prediction/`, `publisher-support/README.md` |
-| Push relay | `docs/guides/server-development.md` §17, `docs/wiki/feed-gateway.md`, `feed-gateway/internal/pushrelay/wire.go`, `docs/guides/firebase.md` |
-| Private invitation walkthrough (retired) | `docs/wiki/gateway-pairing.md`, `docs/protocol.md` (retired identifiers) |
-| MCP adapter, direct MCP server walkthrough, Hermes, OpenClaw, Claude | `mcp-server/README.md`, `docs/development/mcp-server.md`, `docs/wiki/mcp-adapter.md`, `docs/integrations/hermes.md`, `docs/integrations/openclaw.md`, `docs/integrations/claude.md` |
-| SKR staking | `skr-staking-server/README.md`, `docs/wiki/skr-staking.md`, `docs/integrations/skr-staking.md`, `docs/development/skr-staking-server.md` |
-| Jupiter swap and prediction | `docs/wiki/jupiter-swap.md`, `docs/wiki/jupiter-prediction.md`, `docs/integrations/jupiter.md`, `docs/wiki/environments.md` |
-| Operators | `deploy/README.md`, `deploy/*/.env.example`, `deploy/*.yaml`, `docs/guides/self-hosting.md`, `docs/development/feed-gateway.md`, `docs/development/demos.md`, `docs/guides/firebase.md`, `docs/security.md` |
-| Reference contracts | `proto/seekervault/request/v1/`, `request/v2/`, `server/v1/`, `gateway/v1/`, `proposal/v1/`, `update/v1/`, `docs/protocol.md`, `docs/security.md` |
-| Reference limits and errors | `mcp-server/src/config.ts`, `server-sdk/src/requests/action.ts`, `server-sdk/src/storage/pairing-store.ts`, `feed-gateway/internal/config/config.go`, `feed-gateway/internal/gateway/errors.go`, `android/.../plugins/ProviderRegistry.kt` |
+| Welcome, How it works | `README.md`, `docs/architecture.md`, `docs/guides/server-development.md` §1–2, `docs/guides/firebase.md` |
+| App users | `docs/guides/wallet-setup.md`, `pairing.md`, `pending-requests.md`, `policies.md`, `troubleshooting.md`, `docs/wiki/in-app-notifications.md`, `feed-presence.md`, Android `strings_*.xml` |
+| Quickstart, Connect your agent | `mcp-server/README.md`, `docs/development/mcp-server.md`, `docs/guides/pairing.md`, `docs/integrations/hermes.md`, `openclaw.md`, `claude.md`, `deploy/README.md` |
+| Tools | `mcp-server/src/requests/mcp-tools.ts`, `skr-staking-server/src/requests/tools.ts`, `docs/wiki/skr-staking.md` |
+| Server SDK | `server-sdk/README.md`, `server-sdk/src/index.ts`, `server-sdk/examples/minimal.ts`, `docs/guides/server-development.md` §17 |
+| Feed server | `docs/guides/server-development.md`, `docs/wiki/feed-gateway.md`, `feed-gateway/README.md`, `docs/wiki/execution-providers.md`, `jupiter-swap.md`, `jupiter-prediction.md`, `deploy/README.md` |
+| Recipes | `demo-copytrading/README.md`, `demo-prediction/README.md`, `docs/development/demos.md` |
+| Protocol, Errors and limits | `proto/seekervault/**`, `docs/protocol.md`, `docs/security.md`, `mcp-server/src/config.ts`, `feed-gateway/internal/config/config.go` |
 
 ## Update checklist
 
-When the implementation changes, walk this list:
-
-1. Bump the commit hash on this page and on the welcome page.
-2. Diff `server-sdk/src` and `proto/seekervault/**` against [Direct Server SDK](/docs/direct-server-sdk), [Request contract](/docs/request-contract), [Manifest contract](/docs/manifest-contract), and [Errors](/docs/errors).
-3. Diff `mcp-server/src/requests/mcp-tools.ts` and `skr-staking-server/src/requests/tools.ts` against [SDK methods and API operations](/docs/sdk-and-api).
-4. Diff Android string resources against app-user pages (button labels, statuses, banners).
-5. Confirm sandbox copy still says: no sign, no send, not a Solana cluster, Jupiter is not devnet, direct is always production.
-6. Confirm no page describes `gateway_private`, invitations, device credentials, or `seekervault://invite` as available; the retired page says why.
-7. Confirm relay copy matches `feed-gateway/internal/pushrelay/wire.go`: content-free `request_invalidation`, handle via `SetRelayHandle`, relay or direct FCM but never both.
-8. Confirm presence copy matches `docs/wiki/feed-presence.md`: `Heartbeat`, `GetFeedStatus`, 32 channels, 3 × `BROADCAST_HEARTBEAT_SECONDS`, unknown is never online.
-9. Confirm staking copy matches `request.proto` and `docs/wiki/skr-staking.md`: four operations, no amount for cancel and withdraw, mainnet only.
-10. Confirm `/v1/requests` remains primary and `/v1/signals` remains compatibility.
-11. Run `npx @readme/cli lint` and `node scripts/check-docs.mjs`.
-12. Preview the ReadMe branch for the pull request and check navigation on a narrow viewport.
+1. Bump the commit hash here and on the welcome page.
+2. Diff `proto/seekervault/**` and `server-sdk/src/index.ts` against Protocol and Build on the Server SDK.
+3. Diff the two `tools.ts` files against Tools.
+4. Diff Android string resources against the App users pages.
+5. Keep: sandbox is not a Solana network, direct is always production, one paired phone per server, the gateway never sees a decision, registration gives three values.
+6. Run `npx @readme/cli lint` and `node scripts/check-docs.mjs`, then preview the ReadMe branch.

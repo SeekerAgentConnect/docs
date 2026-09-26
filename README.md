@@ -8,7 +8,7 @@ The app reviews and authorizes requests from independent servers. Seed Vault Wal
 
 | Path | Purpose |
 | --- | --- |
-| `docs/` | Guides, grouped by reader: Start here, App users, Server developers, Integrations, Operators, Reference |
+| `docs/` | Guides, grouped by reader: Start here, App users, Your MCP server, Feed server, Recipes, Reference |
 | `docs/**/_order.yaml` | Sidebar order (ReadMe Git Sync) |
 | `reference/ReadMeConfig/` | Required ReadMe configuration pages (keep `hidden: true`) |
 | `scripts/check-docs.mjs` | Internal-link, `_order.yaml`, and placeholder checks |
