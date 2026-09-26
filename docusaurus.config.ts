@@ -60,13 +60,17 @@ const config: Config = {
 
   themeConfig: {
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Seeker Agent Connect',
       logo: {
         alt: 'Seeker Agent Connect',
-        src: 'img/favicon.svg',
+        src: 'img/logo.svg',
+        srcDark: 'img/logo-dark.svg',
+        width: 32,
+        height: 32,
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
@@ -106,7 +110,7 @@ const config: Config = {
     },
     prism: {
       theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      darkTheme: prismThemes.vsDark,
       additionalLanguages: ['bash', 'go', 'yaml', 'json'],
     },
   } satisfies Preset.ThemeConfig,
