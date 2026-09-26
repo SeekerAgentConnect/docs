@@ -1,3 +1,5 @@
+import {copyFile} from 'node:fs/promises';
+import {join} from 'node:path';
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
@@ -56,6 +58,20 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
+  ],
+
+  clientModules: ['./src/landing-reload.ts'],
+
+  plugins: [
+    // Serve the standalone landing page (landing/index.html) at `/`; the docs
+    // live under /docs. Runs after static generation so it replaces the
+    // placeholder src/pages/index.tsx output.
+    () => ({
+      name: 'landing-page',
+      async postBuild({outDir}) {
+        await copyFile(join(__dirname, 'landing/index.html'), join(outDir, 'index.html'));
+      },
+    }),
   ],
 
   themeConfig: {
