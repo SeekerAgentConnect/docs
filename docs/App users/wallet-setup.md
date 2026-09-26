@@ -3,7 +3,7 @@ title: Connect your wallet
 excerpt: SAC uses the wallet you already have. It never asks for a seed phrase.
 hidden: false
 ---
-On a Solana Seeker that wallet is **Seed Vault Wallet**. SAC never creates a wallet and never holds a key. No screen in SAC ever asks for a seed phrase or a private key. If something does, it is not this app.
+On a Solana Seeker that wallet is **Seed Vault Wallet**. SAC never creates a wallet and never holds your wallet's keys. No screen in SAC ever asks for a seed phrase or a private key. If something does, it is not this app.
 
 ## Connect
 
@@ -13,6 +13,8 @@ On a Solana Seeker that wallet is **Seed Vault Wallet**. SAC never creates a wal
 4. SAC shows the address and network, and tells every paired server about them.
 
 Only the address and the network leave the phone. The wallet's authorization for SAC stays on this phone and is never backed up.
+
+A [Restricted feed](/docs/connecting-servers#join-a-restricted-feed) also asks the wallet to sign one plain-text message, which goes to that feed's publisher to prove the address is yours. It is not a transaction and moves no funds. For each Restricted feed, SAC keeps a separate device key in the Android Keystore that signs later access checks for that feed; it is not a wallet key and cannot sign transactions.
 
 Until a wallet is connected, an agent that asks for your address is told there is none.
 

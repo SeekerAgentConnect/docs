@@ -54,7 +54,7 @@ This repo is wired for ReadMe Git Sync:
 3. List the slug in that folder’s `_order.yaml`. Category names belong in `docs/_order.yaml`.
 4. Link internally as `/docs/<slug>`.
 5. Use placeholders (`replace-with-publisher-credential`, `gateway.example.com`) — never real tokens.
-6. Distinguish `direct` and `gateway_feed`. `gateway_private` is retired: never describe it as available. Do not describe Sandbox as a Solana network or Jupiter sandbox as devnet trading.
+6. Distinguish `direct` and `gateway_feed`. `gateway_private` is retired: never describe it as available. Public and Restricted are access policies of `gateway_feed`, not connection modes; scope any "anonymous" or "no credential" statement to Public feeds. SAC ships no billing or payments: describe paid access as the publisher's own system plus Restricted delivery. Do not describe Sandbox as a Solana network or Jupiter sandbox as devnet trading.
 7. Update [Source mapping](docs/Reference/source-mapping.md) when the Direct Server SDK, the gateway API, proto, or UI labels change.
 8. Run the two validation commands above.
 
