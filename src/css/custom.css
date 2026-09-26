@@ -1,0 +1,28 @@
+:root {
+  --ifm-color-primary: #1f8a70;
+  --ifm-color-primary-dark: #1c7c65;
+  --ifm-color-primary-darker: #1a755f;
+  --ifm-color-primary-darkest: #15614e;
+  --ifm-color-primary-light: #22987b;
+  --ifm-color-primary-lighter: #249f81;
+  --ifm-color-primary-lightest: #29b392;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #3ccf9f;
+  --ifm-color-primary-dark: #30c593;
+  --ifm-color-primary-darker: #2dba8b;
+  --ifm-color-primary-darkest: #259972;
+  --ifm-color-primary-light: #57d6ac;
+  --ifm-color-primary-lighter: #64d9b2;
+  --ifm-color-primary-lightest: #8ae3c5;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Wide reference tables scroll instead of overflowing on narrow screens. */
+.markdown table {
+  display: block;
+  overflow-x: auto;
+}

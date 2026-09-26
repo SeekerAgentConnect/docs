@@ -15,7 +15,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: ReadMe CLI lint
-        run: npx --yes @readme/cli lint
-      - name: Internal links and navigation
-        run: node scripts/check-docs.mjs
+          cache: npm
+      - run: npm ci
+      - name: Front matter, slugs, and placeholders
+        run: npm run check
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build (fails on broken links and anchors)
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/v1.0'
+        with:
+          path: build
+
+  # Publishes v1.0 to GitHub Pages. Requires Settings → Pages → Source: GitHub Actions.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/v1.0'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
