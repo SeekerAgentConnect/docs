@@ -79,6 +79,13 @@ for (const dir of new Set([...pages.values()].map((p) => p.dir))) {
   }
 }
 
+const operatorOnly = [
+  [/feed-gatewayctl|gateway-ctl/, "gateway admin command"],
+  [/BROADCAST_(?!CREDENTIAL\b)[A-Z_]+/, "gateway server setting"],
+  [/(?<![\w.-])\/admin(?![\w-])/, "Gateway Admin link"],
+  [/deploy\/(?:feed|ingress)\b/, "gateway deployment preset"],
+];
+
 const secretRe =
   /\b(?:d7baec00|sk_live_|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,})\b/;
 const hexToken = /Authorization: Bearer [A-Za-z0-9+/=_-]{40,}/;
@@ -90,13 +97,30 @@ for (const [stem, page] of pages) {
   if (/\bSEE-\d+\b/.test(page.text) && stem !== "source-mapping") {
     warnings.push(`${page.rel} mentions a ticket id`);
   }
+  // The SAC team operates the gateway; public guides never teach operating or deploying it.
+  if (stem !== "source-mapping") {
+    for (const [pattern, what] of operatorOnly) {
+      if (pattern.test(page.text)) errors.push(`${page.rel} contains gateway-operator material (${what})`);
+    }
+  }
 }
 
+// Slugs the landing page and older links rely on. Moving one needs a redirect in docusaurus.config.ts.
 const required = [
   "getting-started",
   "how-it-works",
+  "wallet-setup",
+  "connecting-servers",
   "mcp-quickstart",
+  "mcp-tools",
+  "server-sdk",
+  "feed-gateway",
+  "connect-to-gateway",
   "publish-your-first-feed",
+  "restricted-feeds",
+  "recipe-copytrading",
+  "recipe-paid-membership",
+  "recipe-prediction",
   "source-mapping",
 ];
 for (const slug of required) {

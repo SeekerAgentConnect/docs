@@ -8,6 +8,8 @@ const baseUrl = process.env.DOCS_BASE_URL ?? '/docs/';
 
 // The landing page lives in SeekerAgentConnect/landing and is published separately.
 const landingUrl = 'https://seekeragentconnect.github.io/landing/';
+// Source repository of the app, SDK, MCP servers and gateway.
+const sourceUrl = 'https://github.com/SeekerAgentConnect/sac';
 
 const config: Config = {
   title: 'Seeker Agent Connect',
@@ -42,6 +44,19 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+
+  plugins: [
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        // Pages that moved or were removed keep their old URLs working.
+        redirects: [
+          // The self-hosted gateway guide was operator material; publishers onboard with the SAC team.
+          {from: '/run-your-own-gateway', to: '/connect-to-gateway'},
+        ],
+      },
+    ],
+  ],
 
   presets: [
     [
@@ -80,22 +95,22 @@ const config: Config = {
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
         {
-          href: 'https://seeker-gateway-sg8g3.ondigitalocean.app/admin/',
-          label: 'Gateway',
+          type: 'dropdown',
+          label: 'Demos',
           position: 'left',
+          items: [
+            {
+              href: 'https://prediction-demo-quni7.ondigitalocean.app/trader',
+              label: 'Prediction demo',
+            },
+            {
+              href: 'https://signals-demo-fzs2q.ondigitalocean.app/trader',
+              label: 'Trade signals demo',
+            },
+          ],
         },
         {
-          href: 'https://prediction-demo-quni7.ondigitalocean.app/trader',
-          label: 'Prediction Demo',
-          position: 'left',
-        },
-        {
-          href: 'https://signals-demo-fzs2q.ondigitalocean.app/trader',
-          label: 'Trade Signals Demo',
-          position: 'left',
-        },
-        {
-          href: 'https://github.com/BrRenat/SeekerAgentConnect',
+          href: sourceUrl,
           label: 'GitHub',
           position: 'right',
         },
@@ -109,21 +124,26 @@ const config: Config = {
           items: [
             {label: 'Welcome', to: '/docs/getting-started'},
             {label: 'How it works', to: '/docs/how-it-works'},
+            {label: 'Use the app', to: '/docs/use-the-app'},
           ],
         },
         {
           title: 'Build',
           items: [
-            {label: 'MCP server quickstart', to: '/docs/mcp-quickstart'},
-            {label: 'Publish your first feed', to: '/docs/publish-your-first-feed'},
+            {label: 'Connect your agent', to: '/docs/mcp-servers'},
+            {label: 'Build your own server', to: '/docs/direct-or-feed'},
+            {label: 'Publish feeds', to: '/docs/publish-feeds'},
+            {label: 'Connect to the SAC gateway', to: '/docs/connect-to-gateway'},
           ],
         },
         {
           title: 'More',
           items: [
+            {label: 'Recipes', to: '/docs/recipes'},
+            {label: 'Reference', to: '/docs/reference'},
             {label: 'Source mapping', to: '/docs/source-mapping'},
             {label: 'Website', href: landingUrl},
-            {label: 'GitHub', href: 'https://github.com/BrRenat/SeekerAgentConnect'},
+            {label: 'GitHub', href: sourceUrl},
           ],
         },
       ],

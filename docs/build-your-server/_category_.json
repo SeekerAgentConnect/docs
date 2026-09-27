@@ -1,0 +1,10 @@
+{
+  "label": "Build your own server",
+  "position": 4,
+  "link": {
+    "type": "doc",
+    "id": "build-your-server/direct-or-feed"
+  },
+  "collapsible": true,
+  "collapsed": true
+}

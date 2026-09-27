@@ -1,0 +1,111 @@
+---
+title: Manage subscriber access
+description: "Approve or reject devices, reissue invitations, revoke one device or every device of a wallet, and follow renewal, expiry and pending gateway confirmation."
+slug: /manage-subscriber-access
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Subscriber administration is yours: it runs on your own server, not on the SAC gateway. This page uses the publisher library's tools (the demo's **Devices · feed access** page and its token-protected API). A custom backend implements the same operations against its own database and the gateway's `GrantAccess` and `RevokeAccess` calls ([Restricted access reference](/docs/restricted-access-reference)).
+
+## Where to manage devices \{#where}
+
+<Tabs groupId="access-admin">
+<TabItem value="ui" label="Devices page" default>
+
+The CopyTrading demo (`examples/demo-signals`) ships a password-protected trader UI, a client of the demo's own API; the browser never holds `PUBLISHER_API_TOKEN`. Follow **Devices · feed access** from its signals page (`/trader/devices` when run from source, default `http://127.0.0.1:8096/trader/devices`). Keep it off the public internet. Setup is on [Copy trading](/docs/recipe-copytrading#approve-subscribers).
+
+Each row shows the wallet that signed the request, the device's **label** (what the phone calls itself, marked *user-supplied*: a claim, never a reason to approve), the **installation** (the fingerprint of the device key), when it was requested and decided, and where its access stands.
+
+</TabItem>
+<TabItem value="api" label="Admin API">
+
+The same operations, for your own tools: a billing webhook, a CRM, a script. Every call takes `Authorization: Bearer $PUBLISHER_API_TOKEN` on your server's API address (`PUBLISHER_API_ADDRESS`, `127.0.0.1:8092` by default):
+
+```sh
+curl -sS http://127.0.0.1:8092/v1/access/devices -H "Authorization: Bearer $PUBLISHER_API_TOKEN"
+curl -sS -X POST http://127.0.0.1:8092/v1/access/devices/$ID/approve \
+  -H "Authorization: Bearer $PUBLISHER_API_TOKEN" -d '{"by":"support@your-team"}'
+```
+
+| Call | Does |
+| --- | --- |
+| `GET /v1/access/devices` | Lists devices with their access state |
+| `POST /v1/access/devices/{id}/approve`, `…/reject`, `…/revoke`, `…/reissue` | Acts on one device. Optional body `{"by":"<who decided>"}` |
+| `POST /v1/access/wallets/{wallet}/revoke` | Revokes every device of a wallet. Answers `{"revoked": <count>}` |
+
+Only your server's own process writes its access database. Other tools call these routes; they do not open the database.
+
+</TabItem>
+</Tabs>
+
+## Approve or reject a request \{#approve-or-reject}
+
+| Action | Available when | Effect |
+| --- | --- | --- |
+| **Approve** | The request is pending | Approves this one device and issues a single-use invitation for it |
+| **Reject** | The request is pending | The device receives no grant. The subscriber can send a new request |
+
+After approval the row shows the invitation as a link and a QR code. The subscriber does not need either: their phone redeems the invitation by itself on its next check, every few seconds while SAC is open, or when they open the feed or tap **Refresh**. Showing it is safe; it is bound to one device key and does nothing on any other device.
+
+**Expected result:** the row moves from **Pending approval** through **Approved — the gateway has not confirmed the grant yet** to **Connected — the gateway admits this device until** *time*.
+
+## Reissue an invitation \{#reissue}
+
+An invitation expires unused after five minutes by default (`PUBLISHER_ACCESS_INVITATION_MINUTES`). The row then says the invitation expired. Press **Reissue invitation** (`…/reissue`): it issues a fresh one and the previous one stops working. Reissue is refused for a device that is not approved.
+
+## Revoke access \{#revoke}
+
+| Action | Effect |
+| --- | --- |
+| **Revoke device** | Ends this one device's access |
+| **Revoke all devices of this wallet** | Ends access for every device that proved this wallet, for example when a membership ends |
+
+A revoked device is not revived. If the person becomes eligible again, they remove the feed in SAC and add it again, which creates a new device key and a new request.
+
+Revocation stops future reads, live updates, reconnects and renewals. It cannot erase signals already delivered to the phone.
+
+## Renewal and expiry \{#renewal}
+
+A device's gateway grant runs for `PUBLISHER_ACCESS_GRANT_HOURS` (6 by default). Your server renews it automatically when a third of its lifetime is left, as long as the device is still approved; if you use an eligibility rule, the rule is asked again before each renewal and an ineligible answer revokes instead. The gateway caps any grant at its own maximum (24 hours by default) and shortens a longer request.
+
+If a renewal does not reach the gateway in time, the grant expires: the row says **Grant expired at the gateway — renewal has not reached it**, and the subscriber sees that their access ran out. When the renewal lands, the same grant works again.
+
+## Pending gateway confirmation \{#pending-confirmation}
+
+Your server records each decision first, then tells the gateway, retrying until it confirms. Two states make sure nobody is told something that is not yet true:
+
+- **Approved — the gateway has not confirmed the grant yet** (`grant_pending`): the phone may not read yet.
+- **Revocation pending at the gateway — this device can still read until the gateway confirms** (`revocation_pending`): **do not treat it as revoked.**
+
+The server retries on its own, backing off from one second to one minute, and checks every 15 seconds. While a row is in either state it shows the attempt count and the last error. If it stays there:
+
+1. Read the last error on the row.
+2. Check that your server can reach the publisher API address, and that `BROADCAST_CREDENTIAL` is still valid. `unauthenticated` means the credential was revoked or rotated away.
+3. Ask the SAC team whether the feed is still registered as Restricted. A grant call for a Public feed is refused with `NOT_RESTRICTED`.
+4. Leave the server running. Nothing needs to be resent by hand.
+
+:::warning[Revocation has a bound, not an instant]
+While your server cannot reach the gateway, an approved device keeps reading for at most one grant lifetime, and a revoked device for at most what is left of its grant. With the defaults, that bound is **six hours**. Set a shorter `PUBLISHER_ACCESS_GRANT_HOURS` for a tighter bound, at the cost of more renewal traffic.
+:::
+
+## Access states \{#access-states}
+
+| State | Row says | Means |
+| --- | --- | --- |
+| `pending_approval` | Pending approval | Waiting for your decision |
+| `rejected` | Rejected | No grant |
+| `invited` | Approved — waiting for the device to redeem its invitation | The phone has not redeemed yet |
+| `invitation_expired` | Approved — the invitation expired before the device used it; reissue it | Press **Reissue invitation** |
+| `grant_pending` | Approved — the gateway has not confirmed the grant yet | Redeemed; waiting for the gateway |
+| `connected` | Connected — the gateway admits this device until *time* | Reading; renewed automatically |
+| `expired` | Grant expired at the gateway — renewal has not reached it | The renewal has not landed |
+| `revocation_pending` | Revocation pending at the gateway — this device can still read until the gateway confirms | Revoked here, **not yet** at the gateway |
+| `revoked` | Revoked — the gateway confirmed | The device can no longer read |
+
+## Next \{#next}
+
+- [Paid membership](/docs/recipe-paid-membership): drive these decisions from your own billing.
+- [Errors and limits](/docs/errors-and-limits#restricted-feeds)

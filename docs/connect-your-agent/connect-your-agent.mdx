@@ -1,0 +1,94 @@
+---
+title: Connect your agent
+description: "Configure Hermes, OpenClaw, Claude or another MCP client for either supplied server. The agent asks; you still decide on the phone."
+slug: /connect-your-agent
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Both supplied servers speak MCP over **Streamable HTTP** at `/mcp`. Every client needs two things: the URL and the bearer token.
+
+| Server | URL (local default) | Token |
+| --- | --- | --- |
+| [General SAC MCP server](/docs/mcp-quickstart) | `http://127.0.0.1:8080/mcp` | `MCP_TOKEN` |
+| [SKR Staking MCP server](/docs/skr-staking-server) | `http://127.0.0.1:8090/mcp` | `SKR_STAKING_MCP_TOKEN` |
+
+Keep the token out of config files you share: anyone who has it can queue requests for you to answer. The examples read it from an environment variable. Neither server speaks MCP over stdio, so never configure it as a `command`.
+
+The examples below use the general server; for the SKR Staking server change the URL and the token.
+
+<Tabs groupId="agent">
+<TabItem value="hermes" label="Hermes" default>
+
+Merge into `mcp_servers` in `~/.hermes/config.yaml`, and put `MCP_SEEKER_VAULT_API_KEY=<MCP_TOKEN>` in `~/.hermes/.env`:
+
+```yaml
+mcp_servers:
+  seeker_vault:
+    url: "http://127.0.0.1:8080/mcp"
+    headers:
+      Authorization: "Bearer ${MCP_SEEKER_VAULT_API_KEY}"
+    timeout: 90
+```
+
+Check with `hermes mcp test seeker_vault`. Hermes names the tools `mcp__seeker_vault__<tool>`. A fuller entry is `examples/hermes.config.yaml` in the source repository.
+
+</TabItem>
+<TabItem value="openclaw" label="OpenClaw">
+
+```sh
+openclaw mcp set seeker_vault '{
+  "url":"http://127.0.0.1:8080/mcp",
+  "transport":"streamable-http",
+  "headers":{"Authorization":"Bearer ${MCP_SEEKER_VAULT_API_KEY}"},
+  "requestTimeoutMs":90000
+}'
+openclaw mcp probe seeker_vault --json
+```
+
+`transport` is required: the server speaks Streamable HTTP, not the older SSE transport.
+
+</TabItem>
+<TabItem value="json" label="mcpServers JSON">
+
+For a client configured with an `mcpServers` JSON file that supports HTTP servers:
+
+```json
+{
+  "mcpServers": {
+    "seeker-agent-connect": {
+      "type": "http",
+      "url": "http://127.0.0.1:8080/mcp",
+      "headers": { "Authorization": "Bearer ${MCP_TOKEN}" }
+    }
+  }
+}
+```
+
+Whether `${…}` is expanded from the environment depends on the client; check its documentation.
+
+</TabItem>
+<TabItem value="claude" label="Claude (hosted)">
+
+A hosted client should not hold your token. Turn on OAuth instead, on a server with public HTTPS:
+
+1. Set `MCP_OAUTH_ISSUER` to your authorization server, and `MCP_OAUTH_SCOPE` to the scope it issues.
+2. In Claude's settings, add `https://direct.example.com:8443/mcp` as a custom connector.
+3. Claude signs in at your authorization server and receives a short-lived token.
+
+The MCP server only validates tokens; it is not an authorization server and does not host sign-in.
+
+</TabItem>
+</Tabs>
+
+**Expected result:** the client lists the server's tools. Ask the agent to call `vault_get_capabilities` (general server) or `get_staking_status` (SKR Staking server).
+
+## Remote agents \{#remote-agents}
+
+An agent on another machine needs an address it can reach. Add that hostname to `MCP_ALLOWED_HOSTS` (general server) or `SKR_STAKING_ALLOWED_HOSTS`, and use HTTPS. Never expose plain HTTP to the internet.
+
+## Next \{#next}
+
+Have the agent create a pairing link: [Pair your phone and enable push](/docs/pair-your-phone).

@@ -1,0 +1,58 @@
+---
+title: Troubleshooting
+description: "What the most common messages mean, and what to do."
+slug: /user-troubleshooting
+sidebar_position: 8
+---
+
+Find the message you see. Messages about a specific task are also on that task's page: [pairing](/docs/pair-your-phone#troubleshooting), [Restricted feeds](/docs/join-restricted-feed#troubleshooting), [notifications](/docs/notifications#troubleshooting) and [your wallet](/docs/wallet-setup#troubleshooting).
+
+## Connections \{#connections}
+
+| The app says | What it means | What to do |
+| --- | --- | --- |
+| **Couldn't reach the server** | The server is not running or not reachable from the phone | Start it, or check the address. Over USB, run `adb reverse` again |
+| **No live updates** | The server answers but does not stream. Not an outage | Refresh by hand. The server's operator can turn live updates on |
+| **Feed offline** | The gateway answers, but the publisher's own server stopped checking in | What was published is still readable. Nothing new arrives until it is back |
+| **Disconnected · pair again to reconnect** | The server ended the pairing | Get a new link and pair again, then remove the old connection |
+| The pairing link is damaged | The link was shortened or changed before you opened it | Open the whole link, or paste the whole `seekervault://pair` line |
+| The server refused the code | The code was already used, expired, or a newer one replaced it | Ask for a new link |
+| The certificate isn't trusted | The server has no valid HTTPS certificate for that host name | The operator needs a publicly trusted certificate. Self-signed ones do not work |
+
+## Restricted feeds \{#restricted-feeds}
+
+| The app says | What to do |
+| --- | --- |
+| Waiting for the publisher to approve this device. | Wait with SAC open, or open the feed or tap **Refresh** later |
+| The publisher didn't approve this device. | Tap **Send access request** to ask again, or ask the publisher |
+| The publisher revoked this device's access to the feed. | Signals you already have stay. Ask the publisher; to ask again, remove the feed and add it again |
+| This device's access to the feed has run out. | Tap **Refresh**. If it stays, ask the publisher |
+
+Every access state and message is explained on [Join a Restricted feed](/docs/join-restricted-feed#access-states).
+
+## Reviews and results \{#reviews}
+
+| The app says | What it means | What to do |
+| --- | --- | --- |
+| No Approve button | The phone could not read the transaction, or it does not match the request | Nothing can be approved from it. Reject it, and tell the sender |
+| **Approve and sign** did not open the wallet | No wallet is connected, or it is on another network | Connect a wallet on the network the request names |
+| The quote and the transaction have expired | A prepared swap or order is good for about a minute | Prepare again for a fresh quote |
+| **Outcome unknown** | The wallet never reported what it did | Check the wallet's history or an explorer. Never retry from SAC |
+| Staking says the cooldown has not finished, or withdraw first | Read from the chain, not from the request | Wait, or withdraw first, then ask again |
+
+<details>
+<summary>Less common messages</summary>
+
+| The app says | What to do |
+| --- | --- |
+| A signal has no Approve button and says this build or wallet cannot serve it | The feed needs an action this app build does not carry, or a wallet on another network. Update the app, or connect a Mainnet wallet. Nothing is picked for you |
+| This feed reference asks for an access policy this version of the app doesn't know | Update the app, or ask the publisher for a current link |
+| The publisher changed these terms | The publisher updated the signal while it was open. Read the new terms and prepare again |
+| Your rules changed while this was open | The review was made again. Read it and approve again if you still mean to |
+| The history couldn't be read from this phone just now | What is shown is what SAC last read; nothing was changed or removed. Reopen the tab |
+
+</details>
+
+## No notifications \{#notifications}
+
+Allow notifications for SAC in Android **Settings**, and check that the sender supports push. See [Notifications and live updates](/docs/notifications).

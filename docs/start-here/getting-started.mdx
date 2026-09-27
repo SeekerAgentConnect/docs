@@ -1,0 +1,57 @@
+---
+title: Welcome to Seeker Agent Connect
+description: "A mobile inbox for your agents, services and communities. Review each request or signal on your phone; the wallet you already have still signs."
+slug: /getting-started
+sidebar_position: 1
+---
+
+import NavCards from '@site/src/components/NavCards';
+
+Seeker Agent Connect (SAC) is an Android app for the Solana Seeker. It gives the agents, services and communities you already use one familiar place on your phone to reach you: a single inbox where you review each request or signal, decide, and see the result. When something needs a signature, **Seed Vault Wallet**, the wallet you already have, signs it.
+
+You keep your existing agents and communities. Developers reach that interface without building a separate mobile app for the workflow: a server sends a request, or a publisher posts a signal, and SAC handles the review on the phone.
+
+SAC never creates a wallet, never holds your wallet's keys, and never signs on its own. Connecting a server or adding a feed only lets that source send you something to review.
+
+## Choose your route
+
+<NavCards
+  cards={[
+    {
+      title: 'Use SAC',
+      to: '/docs/use-the-app',
+      description: 'Connect your wallet, add servers and feeds, review what arrives, and follow the results.',
+      items: ['Connect a wallet', 'Join a Restricted feed', 'Rules, notifications, history'],
+    },
+    {
+      title: 'Connect an agent or service',
+      to: '/docs/mcp-servers',
+      description: 'Run a supplied MCP server for your AI agent, or build a direct server of your own.',
+      items: ['General SAC MCP server', 'SKR Staking MCP server', 'Direct Server SDK'],
+    },
+    {
+      title: 'Publish to your audience',
+      to: '/docs/publish-feeds',
+      description: 'Publish signals once and reach everyone who added your feed, or only subscribers you approve.',
+      items: ['Public and Restricted feeds', 'Manage subscriber access', 'Recipes'],
+    },
+    {
+      title: 'Connect to the SAC gateway',
+      to: '/docs/connect-to-gateway',
+      description: 'Onboard a feed publisher or a direct server with the SAC team and configure the values you receive.',
+      items: ['What you send, what you get', 'Where the values go', 'Push through the SAC relay'],
+    },
+  ]}
+/>
+
+The SAC team operates the gateway. You never deploy or administer it; you integrate with it.
+
+## What a request can be
+
+Acknowledge a message, sign a message, transfer SOL or a token, swap, place a prediction order, or stake SKR. Every one waits for your tap on the phone. Acknowledgements finish in SAC; the others then open the wallet for your confirmation, except in a sandbox feed, where SAC stops before signing. See [Review requests and signals](/docs/reviewing-requests).
+
+## Not sure where to start?
+
+Read [How it works](/docs/how-it-works): who does what between your server, the gateway, the app and the wallet, and the three distinctions every guide relies on: Direct or Feed, Public or Restricted, Sandbox or Production.
+
+This site describes the [Seeker Agent Connect source](https://github.com/SeekerAgentConnect/sac). The revision each page was checked against is on [Source mapping](/docs/source-mapping).

@@ -1,8 +1,8 @@
 ---
-title: Rules
+title: Rules and warnings
 description: "Rules warn you. They never approve, and they never sign."
 slug: /rules
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 Rules are notes you write for yourself on this phone. When a request breaks one, the review shows a warning. You can still approve, and you still have to tap. Rules never approve anything on their own, and they are never sent to a server.
@@ -31,4 +31,9 @@ A connection override replaces the global rule; lists do not merge. Turning an o
 
 ## On the review
 
-The review says **Within the rules you set** or **Outside your rules**, and names which check failed. To go ahead anyway, tick **I have read the warnings above and want to go ahead anyway**; the button becomes **Approve despite warnings**. **Reject** never asks for a tick.
+The review says **Within the rules you set** or **Outside your rules**, and names which check failed. A check the phone could not complete, for example because a price was unavailable, is shown as **Could not be checked**, not as passed. To go ahead anyway, tick **I have read the warnings above and want to go ahead anyway**; the button becomes **Approve despite warnings**. **Reject** never asks for a tick.
+
+## Next {#next}
+
+- [Review requests and signals](/docs/reviewing-requests)
+- [History and results](/docs/history-and-results): daily totals count what Activity recorded.

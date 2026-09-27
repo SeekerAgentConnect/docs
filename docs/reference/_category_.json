@@ -1,6 +1,12 @@
 {
   "label": "Reference",
-  "position": 6,
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "slug": "/reference",
+    "title": "Reference",
+    "description": "Exact contracts, fields, settings, states, error codes and limits. Guides link here when you need the detail."
+  },
   "collapsible": true,
-  "collapsed": false
+  "collapsed": true
 }

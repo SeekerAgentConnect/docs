@@ -5,9 +5,22 @@ slug: /recipe-paid-membership
 sidebar_position: 2
 ---
 
-**The idea.** You run a paid trading-signal community, an invite-only analyst group, or a service where a subscription unlocks a feed. You already sell the membership. A [Restricted feed](/docs/restricted-feeds) lets the phone prove which wallet a subscriber controls, and a small rule on your server asks your own records whether that wallet is a member. Members are approved on the spot; non-members are rejected; people who stop paying are revoked.
+**Use case.** You run a paid trading-signal community, an invite-only analyst group, or a service where a subscription unlocks a feed. You already sell the membership. A [Restricted feed](/docs/restricted-feeds) lets the phone prove which wallet a subscriber controls, and a small rule on your server asks your own records whether that wallet is a member. Members are approved on the spot; non-members are rejected; people who stop paying are revoked.
 
-## Who does what
+| | |
+| --- | --- |
+| **Integration mode** | Feed, **Restricted** access policy |
+| **Starting point** | The [Copy trading](/docs/recipe-copytrading) setup, with its manual approval replaced by your rule |
+| **Access decisions** | Automatic, from your own membership records, through the Go publisher library's `access` package |
+| **Billing** | Entirely yours. SAC provides none |
+
+## Prerequisites {#prerequisites}
+
+- A Restricted feed running on the publisher library, such as the [Copy trading](/docs/recipe-copytrading) demo.
+- Your own membership system: pricing, checkout, billing, and a way to ask whether a wallet is an active member.
+- Go, to build the rule into your server.
+
+## Who does what {#who-does-what}
 
 | You (the provider) | Seeker Agent Connect |
 | --- | --- |
@@ -20,17 +33,17 @@ SAC has **no built-in payments, checkout, recurring billing, or billing-provider
 
 Access is decided per **wallet** and enforced per approved **installation**: each phone that proves a member's wallet is its own device. Every member receives the same publication; a feed is not personalised per recipient, and nothing trades automatically.
 
-## 1. Tie each membership to a wallet
+## Step 1: Tie each membership to a wallet {#tie-membership-to-wallet}
 
 At checkout, or in your member area, collect the Solana wallet address the member will use in SAC and store it against their membership. That address is the only identity SAC gives your rule. How you collect and verify it is up to your own system.
 
-## 2. Set up the Restricted feed
+## Step 2: Set up the Restricted feed {#set-up-the-feed}
 
-Follow [Run a Restricted feed](/docs/restricted-feeds): the gateway operator registers your feed as Restricted at your authentication origin, and your server sets `PUBLISHER_AUTH_ORIGIN`. Share the feed link with members.
+Follow [Run a Restricted feed](/docs/restricted-feeds): get the feed registered as Restricted at your authentication origin, and set `PUBLISHER_AUTH_ORIGIN` on your server. Share the feed link with members.
 
-## 3. Write the rule
+## Step 3: Write the rule {#write-the-rule}
 
-Your server decides through one interface in the repository's publisher library, `publisher-support/access`:
+Your server decides through one interface in the source repository's Go publisher library, package `access` (`packages/publisher-support/access`):
 
 ```go
 type Eligibility interface {
@@ -44,7 +57,7 @@ type Eligibility interface {
 | --- | --- |
 | `access.Eligible` | Approve now and issue the device's invitation |
 | `access.Ineligible` | Reject a new request, or revoke an approved device |
-| `access.Undecided` | Leave it for a human on the Devices page |
+| `access.Undecided` | Leave it for a person on the Devices page |
 
 The shipped CopyTrading demo uses `access.ManualApproval{}`, which answers `Undecided` to everything. A membership rule answers from your records instead. In this example, `MembershipLookup` is **your own code**, reading your own database or billing provider; it is not a SAC API:
 
@@ -83,7 +96,7 @@ func (p PaidMembers) Decide(ctx context.Context, subject access.Subject) (access
 
 To cap devices per member, decide on `Wallet` and `Installation` together, and count installations in your own records.
 
-## 4. Give the rule to both halves
+## Step 4: Give the rule to both halves {#wire-the-rule}
 
 The access service and the grant syncer each take the rule. **Pass it to both.** A syncer built without one falls back to manual approval, and renewals silently stop asking your rule: a member who cancelled would keep reading until someone intervened.
 
@@ -101,9 +114,9 @@ devices := access.New(access.Plan{
 })
 ```
 
-The rest of the wiring is the CopyTrading demo's `cmd/copytrading/main.go`, with `access.ManualApproval{}` replaced by your rule in both places.
+The rest of the wiring is the CopyTrading demo's `examples/demo-signals/cmd/copytrading/main.go`, with `access.ManualApproval{}` replaced by your rule in both places. The Go module path still carries the repository's former name, `SeekerAgentWallet`.
 
-## 5. When your rule is asked
+## Step 5: Know when your rule is asked {#when-the-rule-is-asked}
 
 | When | What each answer does |
 | --- | --- |
@@ -111,7 +124,7 @@ The rest of the wiring is the CopyTrading demo's `cmd/copytrading/main.go`, with
 | The device redeems its invitation | Only `Ineligible` acts: the device is revoked and gets no session. The rule cannot approve a device here |
 | The device's grant is due for renewal (when a third of its lifetime is left) | Only `Ineligible` acts: the device is revoked instead of renewed |
 
-## 6. Cancellation and expiry
+## Step 6: Handle cancellation and expiry {#cancellation}
 
 When a membership ends, you have two ways to end access. Use both.
 
@@ -129,8 +142,13 @@ Use your server's API address (`PUBLISHER_API_ADDRESS`, `127.0.0.1:8092` by defa
 
 Either way, a revocation is **pending until the gateway confirms it**, and the device can read until then. When your server cannot reach the gateway, the bound is what is left of the device's grant: at most six hours by default. Marking a membership inactive in your database does **not** end access by itself; it takes effect at the next check of your rule, or when you call the revoke API.
 
-A revoked device is not revived. If the person pays again, they remove the feed in SAC and add it again. That creates a new device key and a new request, which their wallet signs once more, and your rule approves it. A person your rule *rejected* at request time can instead tap **Send access request** on the feed.
+**Renewal after a lapse.** A revoked device is not revived. If the person pays again, they remove the feed in SAC and add it again. That creates a new device key and a new request, which their wallet signs once more, and your rule approves it. A person your rule *rejected* at request time can instead tap **Send access request** on the feed.
 
-## What the subscriber sees
+## Expected result {#expected-result}
 
-They add your link, sign one message in their wallet (not a transaction; it moves no funds), and, if your rule says `Eligible`, their phone connects on its next check, within seconds while SAC is open. See [Connect servers and feeds](/docs/connecting-servers#join-a-restricted-feed).
+A member adds your link and signs one message in their wallet (not a transaction; it moves no funds). Your rule answers `Eligible`, and their phone connects on its next check (every few seconds while SAC is open, or when they open the feed). A non-member is rejected at once. A member whose membership lapses is revoked at your explicit call or at the next renewal, after the gateway confirms. See [Join a Restricted feed](/docs/join-restricted-feed) for what they see.
+
+## Next {#next}
+
+- [Manage subscriber access](/docs/manage-subscriber-access): the states your rule's decisions move through.
+- [Errors and limits](/docs/errors-and-limits#restricted-feeds)

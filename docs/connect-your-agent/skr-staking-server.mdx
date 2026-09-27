@@ -1,0 +1,137 @@
+---
+title: SKR Staking MCP server
+description: "Run the SKR Staking MCP server, connect your agent, pair your phone, read your staking position without moving funds, and follow a staking request to its result."
+slug: /skr-staking-server
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The SKR Staking MCP server manages one owner's SKR staking position. Your agent asks to stake, unstake, cancel an unstake or withdraw; the server builds an unsigned transaction from the chain; you review it in SAC and confirm in the wallet. The server never signs.
+
+It is a second, independent server. It has its own pairing, its own token and its own database, and runs side by side with the [general SAC MCP server](/docs/mcp-quickstart) without sharing anything. Pairing it does not touch the general server's pairing.
+
+:::warning[Mainnet only]
+SKR staking exists on Solana **mainnet-beta** only. The server checks at startup that its RPC endpoint serves mainnet-beta and refuses otherwise, and it answers only for a phone whose wallet is connected on **Mainnet**. There is no devnet mode.
+:::
+
+## Prerequisites \{#prerequisites}
+
+- **Node 24.21 or newer**, or Docker.
+- A **mainnet RPC endpoint** for `SKR_STAKING_RPC_URL`.
+- **SAC on an Android phone** with a wallet connected on **Mainnet** ([Connect your wallet](/docs/wallet-setup)).
+- An **MCP client** that speaks Streamable HTTP.
+
+You do not need to stake anything to finish this guide: the first request is a read.
+
+## Step 1: Run the server \{#run-the-server}
+
+Generate a token for your agent with `openssl rand -hex 32` and put it in `SKR_STAKING_MCP_TOKEN`.
+
+<Tabs groupId="mcp-install">
+<TabItem value="source" label="From source" default>
+
+From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac):
+
+```sh
+pnpm install --frozen-lockfile
+# in .env: SKR_STAKING_MCP_TOKEN and SKR_STAKING_RPC_URL (a mainnet endpoint)
+pnpm dev:mcp-skr-staking          # MCP at http://127.0.0.1:8090/mcp
+```
+
+</TabItem>
+<TabItem value="npm" label="npm package">
+
+The server is packaged as `@seeker_agent_connect/mcp-skr-staking`, with the command `seeker-skr-staking-mcp`. Its variables all start with `SKR_STAKING_` and share nothing with the general server:
+
+```sh
+npx --package=@seeker_agent_connect/mcp-skr-staking@next -- seeker-skr-staking-mcp --help
+```
+
+`servers/mcp-skr-staking/.env.example` in the source repository lists every variable.
+
+:::note
+The packages are release candidates on the `next` tag. If your registry cannot resolve the package, use the source tab.
+:::
+
+</TabItem>
+<TabItem value="docker" label="Docker">
+
+From a checkout of the source repository:
+
+```sh
+cp deploy/skr-staking/.env.example deploy/skr-staking/.env   # SKR_STAKING_MCP_TOKEN, SKR_STAKING_RPC_URL
+docker compose --env-file deploy/skr-staking/.env -f deploy/skr-staking/compose.yaml up -d --build
+```
+
+</TabItem>
+</Tabs>
+
+**Expected result:** the server keeps running and listens on port 8090. A server whose RPC endpoint is not mainnet-beta stops at startup instead.
+
+## Step 2: Connect your agent \{#connect-your-agent}
+
+Point your agent at `http://127.0.0.1:8090/mcp` with `Authorization: Bearer <SKR_STAKING_MCP_TOKEN>`. For a client that takes an `mcpServers` JSON file:
+
+```json
+{
+  "mcpServers": {
+    "skr-staking": {
+      "type": "http",
+      "url": "http://127.0.0.1:8090/mcp",
+      "headers": { "Authorization": "Bearer ${SKR_STAKING_MCP_TOKEN}" }
+    }
+  }
+}
+```
+
+Other clients: [Connect your agent](/docs/connect-your-agent).
+
+## Step 3: Pair your phone \{#pair-your-phone}
+
+Ask the agent to connect your phone. It calls `skr_create_pairing_link`; open the link on the phone and tap **Pair**. From a shell on the host, the server's `pair` command prints the same code (`node --env-file-if-exists=.env servers/mcp-skr-staking/src/cli.ts pair` in a checkout). Everything else, including reaching a server on your computer from the phone, is on [Pair your phone and enable push](/docs/pair-your-phone).
+
+**Expected result:** SAC lists the SKR staking server as its own connection, next to any other server you paired.
+
+## Step 4: Read your position \{#read-your-position}
+
+Ask the agent to call `get_staking_status`. It creates no request, asks you nothing and builds no transaction. It answers with your available, staked and unstaking SKR, whether a cooldown has finished, the program's minimum stake, and a `display` sentence.
+
+**Expected result:** the agent can tell you your position. If it says there is no connected wallet, pair the phone or connect a Mainnet wallet in SAC.
+
+## Step 5: Follow a staking request \{#staking-request}
+
+When you decide to act, the agent calls one of:
+
+| Tool | Asks you to | Takes |
+| --- | --- | --- |
+| `request_stake` | Stake `amount` SKR | `amount`, `idempotency_key` |
+| `request_unstake` | Start unstaking `amount`. Starts the cooldown; moves nothing yet | `amount`, `idempotency_key` |
+| `request_cancel_unstake` | Put the whole pending unstake back to work | `idempotency_key` |
+| `request_withdraw` | Withdraw what a finished cooldown released | `idempotency_key` |
+
+`amount` is SKR base units as a string; SKR has six decimals, so 1 SKR is `"1000000"`. The wallet is never a parameter: it is the one you connected. Each tool also takes an optional `note`, shown apart from the verified details, and `expires_in_seconds`.
+
+On the phone each operation has its own review and button. SAC checks the transaction against the staking program before the wallet opens; then you confirm in Seed Vault Wallet.
+
+**Reading the result.** There is no separate get or cancel tool. To follow a request, the agent calls **the same tool again with the same `idempotency_key` and parameters**; it gets the original request as it stands now. `CONFIRMED` carries the transaction `signature`; `UNKNOWN` means nobody knows whether it was sent, and it must never be retried. A request cannot be cancelled by the agent; you reject it on the phone, or it expires.
+
+## Step 6: Enable push (optional) \{#enable-push}
+
+This server wakes the phone only through the SAC relay: set `SKR_STAKING_RELAY_URL`, `SKR_STAKING_RELAY_SERVER_ID` and `SKR_STAKING_RELAY_CREDENTIAL`. See [Enable push wake-ups](/docs/pair-your-phone#enable-push).
+
+## Troubleshooting \{#troubleshooting}
+
+| The agent reads | What to do |
+| --- | --- |
+| No connected wallet | Pair the phone, or connect a wallet in SAC |
+| `INVALID_PARAMETERS` on a devnet or testnet wallet | Connect a **Mainnet** wallet; this server serves nothing else |
+| `CHAIN_UNAVAILABLE` | The RPC endpoint did not answer. Try again |
+| Below the minimum stake, insufficient balance | Checked on chain before you are asked. Adjust the amount |
+| Nothing staked, nothing pending, cooldown not finished | Read `get_staking_status`; withdraw first, or wait |
+
+## Next \{#next}
+
+- [MCP tools](/docs/mcp-tools) for every parameter and answer.
+- [Review requests and signals](/docs/reviewing-requests) for the staking review on the phone.
