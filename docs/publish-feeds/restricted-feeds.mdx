@@ -1,0 +1,158 @@
+---
+title: Run a Restricted feed
+description: "Publish to a private audience: set up publisher authentication, understand the complete authorization flow, and decide which wallets may read. The gateway enforces your decision on every read."
+slug: /restricted-feeds
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+A **Restricted** feed is a subscriber-only feed. You still publish each signal once and the gateway still delivers it, but only to devices you approved. A subscriber proves which wallet they control by signing one message; your server decides whether that wallet may read; the gateway admits only the devices you granted. You can revoke a device, or every device of a wallet, when someone is no longer eligible.
+
+Restricted is an **access policy** of an ordinary feed (`gateway_feed`), not a new connection mode. Everything on [Publish your first feed](/docs/publish-your-first-feed) still applies; this page adds who may read.
+
+## Who decides what \{#roles}
+
+| Role | Controls |
+| --- | --- |
+| **You**, the publisher | Which wallets and devices may read: your eligibility rule, approvals, rejections, revocations, invitations. Any billing, entirely in your own system |
+| **The SAC gateway** | Enforces your grants on every read, stream and push. Holds your feed's registered policy and authentication origin, which the SAC team sets at your request |
+| **The subscriber** | Which wallet they prove, and whether to keep the feed |
+
+You cannot make your own feed Public by yourself, and the SAC team cannot approve a subscriber: the registration decides *whether* a feed is gated, and your decisions decide *who* gets through.
+
+## The authorization flow \{#authorization-flow}
+
+```text
+subscriber adds link ─► phone asks YOUR server for a challenge
+                    ─► wallet signs one message + device key signs the same bytes ─► request is pending
+YOUR rule or admin  ─► approve ─► single-use invitation for that one device
+phone redeems it    ─► YOUR server grants access at the GATEWAY ─► phone gets a session
+phone reads feed    ─► GATEWAY checks the grant on every read, stream ticket and push target
+YOUR server renews the grant while the device stays eligible, or revokes it
+```
+
+1. **Challenge.** The subscriber's phone asks your authentication endpoint for a challenge, naming the feed, the wallet and a device key it created for this feed.
+2. **Wallet proof.** The wallet signs the challenge message once. It is plain text, says it is not a transaction, and moves no funds. The device key signs the same bytes, binding the request to that installation.
+3. **Decision.** Your eligibility rule answers at once, or leaves the request pending for a person.
+4. **Invitation.** On approval, your server issues a single-use invitation bound to that device key.
+5. **Redemption.** The phone redeems the invitation with its device key. Your server grants access at the gateway and hands the phone a session.
+6. **Reading.** The gateway admits the session on every read until the grant ends.
+7. **Renewal or revocation.** Your server renews the grant while the device stays eligible, and revokes it when not.
+
+The exact calls and fields are on [Restricted access reference](/docs/restricted-access-reference).
+
+## Before you start \{#before-you-start}
+
+1. **Decide your eligibility rule.** A person approves each request by hand, or your own system answers automatically, for example from membership records. See [Paid membership](/docs/recipe-paid-membership).
+2. **Pick your authentication origin.** A public HTTPS origin, such as `https://auth.example.com`, where phones reach your server's `/access/v1` endpoint. No path, query or fragment. Plain HTTP works only on loopback, for local development.
+3. **Get registered as Restricted at that origin** ([Connect to the SAC gateway](/docs/connect-to-gateway)). Until the registration is right, a correctly built server publishes nothing, by design.
+
+## Step 1: Serve the authentication endpoint \{#serve-access-endpoint}
+
+Phones call `/access/v1` at your authentication origin. It holds no credential: every call is checked by signature, and it tells a caller nothing about anyone else. Choose how you provide it.
+
+<Tabs groupId="restricted-path">
+<TabItem value="library" label="Publisher library (Go)" default>
+
+The source repository's Go publisher library implements the whole publisher side in its `access` package: challenges, wallet and device-key verification, requests, invitations, redemption, grant sync with the gateway, renewal, and the admin API. The demo feed server `examples/demo-signals` (CopyTrading) is built on it and runs as a Restricted feed; start from it.
+
+Beside the ordinary `PUBLISHER_*` settings, it reads:
+
+| Variable | Default | What it is |
+| --- | --- | --- |
+| `PUBLISHER_AUTH_ORIGIN` | Required | The origin phones reach `/access/v1` at, exactly as registered. Missing or malformed refuses to start |
+| `PUBLISHER_AUTH_ADDRESS` | Empty | A separate `host:port` listener for `/access/v1`. Empty serves it beside the token-protected `/v1` API |
+| `PUBLISHER_ACCESS_GRANT_HOURS` | `6` (1 to 720) | How long a device's gateway grant runs before your server renews it |
+| `PUBLISHER_ACCESS_INVITATION_MINUTES` | `5` (1 to 60) | How long an approved device has to redeem its invitation |
+| `PUBLISHER_ACCESS_CHALLENGES_PER_HOUR` | `60` | Wallet challenges one client IP address may ask for per hour |
+
+Publish `/access/v1` at your authentication origin through your HTTPS proxy or platform ingress. The rest of the API, including your admin routes under `/v1/access/…`, stays behind `PUBLISHER_API_TOKEN`.
+
+</TabItem>
+<TabItem value="custom" label="Your own backend">
+
+Implement the same contract yourself:
+
+1. **Serve `/access/v1`** at your authentication origin: `POST /access/v1/challenges`, `POST /access/v1/requests`, `POST /access/v1/requests/{id}/status` and `POST /access/v1/redeem`. Build the challenge message exactly as specified: the phone rebuilds it from the fields and refuses to sign anything else.
+2. **Verify both signatures**: the wallet's Ed25519 signature and the device key's P-256 signature, over the same bytes, within the allowed clock skew.
+3. **Store requests and decisions** in your own database, keyed by wallet and device.
+4. **Grant and revoke at the gateway** with `GrantAccess`, `RevokeAccess` and `DescribeAccess` on the publisher API, authenticated with your publisher credential. Retry until the gateway confirms.
+5. **State the policy in your manifest**: `"access": {"policy": "FEED_ACCESS_POLICY_RESTRICTED", "authOrigin": "https://auth.example.com"}` in its `feed` reference.
+
+Every call, field and status is on [Restricted access reference](/docs/restricted-access-reference).
+
+</TabItem>
+</Tabs>
+
+**Expected result:** your server starts and logs `access=restricted` with your origin (publisher library), or answers a challenge request at `https://<your origin>/access/v1/challenges` (your own backend).
+
+## Step 2: Confirm the registration before publishing \{#fails-closed}
+
+Before it publishes, the publisher library asks the gateway how it enforces your feed (`DescribeAccess`), and publishes only when the answer is **Restricted, at this origin**. Do the same in your own backend.
+
+| Situation | What happens |
+| --- | --- |
+| The feed is not registered as Restricted, or at another origin | Nothing is published; the library refuses with `access_unconfirmed` and signals wait in your database. Ask the SAC team to check the registration |
+| The gateway is unreachable | Same: `access_unconfirmed`, signals wait |
+| A manifest claims a policy or origin the registration does not have | The gateway refuses it with `ACCESS_MISMATCH` |
+| The registration is switched back to Public | The library stops publishing within about a minute |
+
+`access_unconfirmed` is a delayed publication, never an audience nobody approved. When the registration is right, the waiting signals go out.
+
+Origins are compared exactly after normalising (lowercase host, no default port, no trailing slash): `https://auth.example.com` and `https://auth.example.com:8443` are different origins.
+
+## Step 3: Share the feed link \{#share-the-link}
+
+```text
+seekervault://feed?v=1&gateway=https%3A%2F%2Fgateway.example.com&server=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d&access=restricted
+```
+
+Share it anywhere. **A link alone grants no access.** The phone reads the policy and your authentication origin from the manifest the gateway serves, stamped from your registration; that is the only address a phone ever sends a wallet proof to. `access=restricted` is a floor: if the manifest then says Public, the phone refuses the feed. What the subscriber sees is on [Join a Restricted feed](/docs/join-restricted-feed).
+
+## Step 4: Decide who gets in \{#decide}
+
+Each request reaches your eligibility rule:
+
+| Rule | What happens |
+| --- | --- |
+| **Manual approval** (the demo's default) | Every request waits for a person to approve or reject it |
+| **Your own rule**, for example a membership lookup | Eligible wallets are approved at once; ineligible ones are rejected; anything else waits for a person |
+
+Approving one device never approves another, even of the same wallet: a second phone is a second request. How to approve, reject, reissue, revoke and follow renewal is on [Manage subscriber access](/docs/manage-subscriber-access).
+
+## Step 5: Verify end to end \{#verify}
+
+1. Add the link on a phone with a wallet connected, and sign the access message.
+2. The request appears as pending on your side.
+3. Approve it. On its next check, every few seconds while SAC is open, the phone connects and the feed's signals appear.
+4. Revoke it. After the gateway confirms, the phone shows that its access was revoked and receives nothing new.
+
+## What the gateway enforces \{#gateway-enforcement}
+
+| On a Restricted channel | Requires |
+| --- | --- |
+| The manifest | Nothing: a phone needs it to know where to prove a wallet |
+| Listing and reading signals | A live grant's session, on every page |
+| Live updates | A stream ticket issued only for a live grant, lasting no longer than it |
+| Online/offline status | A live grant's session |
+| Push | A per-device target registered under the grant. Restricted channels never use a shared push topic |
+
+There is no anonymous fallback. When a device is revoked, the gateway stops admitting it on its next read and stream. **Revocation does not depend on push**, and **revocation cannot erase what was delivered**: signals already on a subscriber's phone stay there.
+
+## Who knows what \{#who-knows-what}
+
+| | Holds | Never holds |
+| --- | --- | --- |
+| Your server | The wallet address that proved itself, the device key it bound, the phone's label, your decisions, invitations, grant IDs and a digest of each session | What a subscriber did with a signal: no amount, decision, transaction or result |
+| The gateway | A grant ID, one opaque reference per wallet and one per device, the SHA-256 of the session, an expiry, and a push target while one is registered | The wallet address, the wallet signature, the device's label, or the session itself |
+| The phone | A per-feed device key in the Android Keystore, the session, and its own record of the request | — |
+
+Every approved subscriber receives the same publication: a Restricted feed gates who reads, it does not personalise what they read, and nothing is traded automatically.
+
+## Next \{#next}
+
+- [Manage subscriber access](/docs/manage-subscriber-access)
+- [Paid membership](/docs/recipe-paid-membership): approve automatically from your own records.
+- [Copy trading for your subscribers](/docs/recipe-copytrading): the Restricted demo, end to end.

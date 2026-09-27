@@ -2,10 +2,10 @@
 title: Errors and limits
 description: "The codes an agent or a publisher will actually meet, and the bounds behind them."
 slug: /errors-and-limits
-sidebar_position: 2
+sidebar_position: 4
 ---
 
-## Request errors (MCP server and SDK)
+## Request errors (MCP servers and SDK) {#request-errors}
 
 | Code | Meaning |
 | --- | --- |
@@ -22,7 +22,7 @@ sidebar_position: 2
 
 `UNKNOWN` is a request state, not an error. It means the outcome is not known, and it must never be retried as a failure.
 
-## Gateway refusals (feed servers)
+## Gateway refusals (feed servers) {#gateway-refusals}
 
 | Problem | Meaning |
 | --- | --- |
@@ -34,7 +34,7 @@ sidebar_position: 2
 | `too_many_requests` | Slow down; the next publish is the retry |
 | `too_many_proposals` | Withdraw some signals first |
 
-## Restricted feeds
+## Restricted feeds {#restricted-feeds}
 
 The gateway's access problems, numbered 47 to 54:
 
@@ -43,13 +43,13 @@ The gateway's access problems, numbered 47 to 54:
 | `ACCESS_REQUIRED` | Restricted, and no session, or one this gateway does not hold for that channel |
 | `ACCESS_REVOKED` | The publisher revoked it. Final for that session |
 | `ACCESS_EXPIRED` | The grant ran out without renewal. The same grant renewed works again |
-| `ACCESS_MISMATCH` | A manifest claims a policy or origin the operator did not register. Usually `PUBLISHER_AUTH_ORIGIN` does not match `--auth-origin` exactly |
+| `ACCESS_MISMATCH` | A manifest claims a policy or origin the feed is not registered with. Usually `PUBLISHER_AUTH_ORIGIN` does not match the registered authentication origin exactly |
 | `NOT_RESTRICTED` | A grant call from a publisher whose feed is registered Public, or a per-device push target set on a Public channel |
 | `NO_SUCH_GRANT` | A grant this publisher does not hold |
 | `GRANT_REVOKED` | A renewal of a grant the gateway already revoked. Final |
 | `BAD_GRANT` | A grant with a malformed ID, reference, digest or lifetime |
 
-The publisher's own guard refuses to publish with `access_unconfirmed` until the gateway confirms the feed is Restricted at its origin. Signals wait; nothing is lost.
+The publisher library's own guard refuses to publish with `access_unconfirmed` until the gateway confirms the feed is Restricted at its origin. Signals wait in the publisher's database until then.
 
 The publisher's `/access/v1` answers `{"error": "<code>", "detail": "…"}`:
 
@@ -71,7 +71,7 @@ The publisher's `/access/v1` answers `{"error": "<code>", "detail": "…"}`:
 
 Relay calls answer `401` for a bad credential, `403` for a handle that does not authorize this server, `429` for rate, and `503` when the gateway cannot send right now. None of them fails a request.
 
-## Limits
+## Limits {#limits}
 
 | Limit | Value |
 | --- | --- |
@@ -84,12 +84,15 @@ Relay calls answer `401` for a bad credential, `403` for a handle that does not 
 | Required plugins per manifest | 16 |
 | Signals held per feed | 200; withdrawals still allowed at the bound |
 | Publish rate per feed server | 2 per second, bursts of 20 |
-| Heartbeat interval; offline after | 30 seconds; 90 seconds without a check-in |
+| Heartbeat interval; offline after | 30 seconds by default, as the heartbeat answer states; three missed intervals |
+| Gateway retention after a signal ends | 7 days by default |
+| Signal terms | 32 per signal, each value at most 512 bytes; publisher note at most 1024 bytes |
+| Publisher call body | 64 KiB |
 | Relay wake-ups per phone | One every two seconds; extra ones are merged |
 | Prediction order minimum | Five dollars of the stake token |
 | Swap or prediction preparation | Good for about a minute, then prepare again |
 | Restricted feed: access grant | 6 hours by default (`PUBLISHER_ACCESS_GRANT_HOURS`, 1 to 720), renewed when a third is left |
-| Restricted feed: longest grant the gateway honours | 24 hours by default (`BROADCAST_MAX_GRANT_HOURS`) |
+| Restricted feed: longest grant the gateway honours | 24 hours by default; `DescribeAccess` reports it as `most_grant_seconds` |
 | Restricted feed: access after the publisher loses the gateway | At most one grant lifetime for an approved device, at most what is left of its grant for a revoked one |
 | Restricted feed: invitation | Single use, bound to one device, 5 minutes by default (`PUBLISHER_ACCESS_INVITATION_MINUTES`, 1 to 60) |
 | Restricted feed: wallet challenge | Single use, 5 minutes |
@@ -98,4 +101,4 @@ Relay calls answer `401` for a bad credential, `403` for a handle that does not 
 | Restricted feed: device label | 64 printable bytes; a claim, never checked |
 | Restricted feed: request body | 16 KiB |
 
-The MCP server's own bounds (`REQUEST_TTL_SECONDS`, `REQUEST_PENDING_LIMIT`, `PAIRING_TOKEN_TTL_SECONDS`), the gateway's (`BROADCAST_*`) and a Restricted feed server's (`PUBLISHER_ACCESS_*`) are configuration; the repository READMEs list every one.
+The MCP servers' own bounds (`REQUEST_TTL_SECONDS`, `REQUEST_PENDING_LIMIT`, `PAIRING_TOKEN_TTL_SECONDS`, and their `SKR_STAKING_` equivalents) and a Restricted feed server's (`PUBLISHER_ACCESS_*`) are your configuration; the source repository's READMEs list every one. The gateway's bounds are set by the SAC team.

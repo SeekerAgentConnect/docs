@@ -1,0 +1,164 @@
+---
+title: Build on the Direct Server SDK
+description: "The TypeScript engine behind the supplied MCP servers, for a direct server of your own: pairing, requests, results, cancellation, live updates and push through the SAC relay."
+slug: /server-sdk
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+`@seeker_agent_connect/server-sdk` is the engine both supplied MCP servers are built on. Use it when your backend should send requests to one paired phone directly, without MCP: create a request in-process, observe it, and read the result.
+
+| The SDK owns | Your code owns |
+| --- | --- |
+| Pairing, the request lifecycle, storage in one SQLite file, the phone-facing API, live updates, the pairing page, and push wake-ups through the SAC relay | The transport to your users, your business logic, and any chain access (through optional providers) |
+
+The SDK implements **Direct** connections only. It does not publish feeds; for that, see [Publish feeds](/docs/publish-feeds). It never holds a wallet key, approves, signs or broadcasts.
+
+## Prerequisites \{#prerequisites}
+
+- Node **24.21 or newer**; the package is ESM-only and ships its TypeScript declarations.
+- An address the phone can reach, for `publicOrigin` ([Pair your phone](/docs/pair-your-phone#before-you-pair)).
+- SAC on a phone for testing.
+
+## Step 1: Install \{#install}
+
+<Tabs groupId="sdk-install">
+<TabItem value="tarball" label="Tarball from source" default>
+
+From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac):
+
+```sh
+pnpm install --frozen-lockfile
+pnpm --filter @seeker_agent_connect/server-sdk run build
+npm pack ./packages/server-sdk --pack-destination ./artifacts
+```
+
+Then, in your project, install the `.tgz` file it printed, together with `@bufbuild/protobuf@2`.
+
+</TabItem>
+<TabItem value="npm" label="npm package">
+
+```sh
+npm install @seeker_agent_connect/server-sdk@next @bufbuild/protobuf@2
+```
+
+The package is a release candidate on the `next` tag. If your registry cannot resolve it, build a tarball from source (first tab).
+
+</TabItem>
+</Tabs>
+
+Two entry points: `@seeker_agent_connect/server-sdk` and `@seeker_agent_connect/server-sdk/protocol` (the generated protocol types). There is no separate protocol package and no supported deep import. `@bufbuild/protobuf` is what you build protocol messages with.
+
+## Step 2: Open a server \{#open-a-server}
+
+```ts
+import { openDirectServer, startPhoneApi } from "@seeker_agent_connect/server-sdk";
+
+const server = openDirectServer({
+  databasePath: "/var/lib/my-server/direct.db",
+  publicOrigin: "https://direct.example.com",   // what pairing links point at
+  requestTtlSeconds: 86_400,
+  pendingLimit: 100,
+  pairingTokenTtlSeconds: 600,
+  liveCommandTimeoutSeconds: 30,
+  log: (message) => console.info(`[direct] ${message}`),
+});
+const phoneApi = await startPhoneApi(server, { host: "127.0.0.1", port: 8080 });
+```
+
+Opening migrates the file and fixes the server ID. Reopening the same file keeps the server ID, the pairing and every request. Importing the package alone opens nothing.
+
+## Step 3: Pair the phone \{#pair-the-phone}
+
+```ts
+import { pairingLandingUrl } from "@seeker_agent_connect/server-sdk";
+
+const issued = server.pairing.issue();
+console.info(issued.uri);                   // seekervault://pair?…
+console.info(pairingLandingUrl(issued));    // https://direct.example.com/pair#…
+```
+
+Serve the pairing page at `/pair` with `handlePairingLink(req, res, { publicOrigin })`, or show the URI as a QR. One paired phone per server: `server.pairing.active()` tells you which, `server.pairing.revoke(connectionId)` ends it. What the owner does is on [Pair your phone](/docs/pair-your-phone#confirm-on-the-phone).
+
+## Step 4: Create a request \{#create-a-request}
+
+```ts
+import { create } from "@bufbuild/protobuf";
+import { privateRequest } from "@seeker_agent_connect/server-sdk";
+import { ActionSchema, AckActionSchema } from "@seeker_agent_connect/server-sdk/protocol";
+
+const action = create(ActionSchema, {
+  kind: { case: "ack", value: create(AckActionSchema, { text: "Deploy finished. OK?" }) },
+});
+const { request } = server.requests.createRequest(
+  privateRequest(action, "First request", "my-backend-0001", 600),
+);
+```
+
+`privateRequest(action, description, idempotencyKey, expiresInSeconds)`. `createRequest` stores; it does not approve. The same idempotency key returns the same request. It needs a paired phone: without one it throws a `RequestFailure` (`NOT_PAIRED`), and the other failures on [Errors and limits](/docs/errors-and-limits#request-errors) arrive the same way.
+
+| Action | Needs |
+| --- | --- |
+| `ack` | Nothing. The owner acknowledges or rejects; the wallet never opens |
+| `sign_message` | The wallet from `server.requests.activeWallet()` |
+| `transfer` | A `transferProvider` passed to `openDirectServer` |
+| `staking` | A `stakingProvider` passed to `openDirectServer` |
+
+**Expected result:** the request appears in the paired phone's Inbox.
+
+## Step 5: Observe the lifecycle and read the result \{#lifecycle}
+
+```ts
+const requestId = request.ref!.requestId;
+const stop = server.requests.observe(requestId, (r) => console.info(r.state));
+const current = server.requests.get(requestId);   // the request with its outcome
+```
+
+The listener runs on every change the phone makes. The states, and which are terminal, are on [Protocol](/docs/protocol#lifecycle). Treat `UNKNOWN` as unknown, never as a failure to retry.
+
+## Step 6: Cancel \{#cancel}
+
+```ts
+server.requests.cancel(requestId);
+```
+
+Only a `PENDING` request can be cancelled; otherwise the call fails with `INVALID_STATE`.
+
+## Step 7: Live updates \{#live-updates}
+
+`startPhoneApi` serves the unary API only, so the phone sees changes only when it next reads your server. For live updates while the app is open, mount `server.phoneHandler({ includeUpdates: true, updateUrl })` on an HTTP/2 listener in your own server. Never put that stream behind an HTTP/1 proxy.
+
+## Step 8: Push through the SAC relay \{#push-relay}
+
+To wake the phone when the app is closed, register your server for the relay ([Connect to the SAC gateway](/docs/connect-to-gateway#direct-server-push)) and pass the three values you receive:
+
+```ts
+openDirectServer({
+  // …the options above
+  relay: {
+    relayUrl: "https://gateway.example.com",
+    serverId: "3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    credential: process.env.RELAY_CREDENTIAL!,
+  },
+});
+```
+
+The SDK advertises the relay to the paired phone, stores the handle the phone gives back, and sends a content-free wake-up after each change. Nothing about the request is relayed, and no relay outcome ever fails a request.
+
+## Shut down \{#shut-down}
+
+```ts
+server.beginShutdown();
+await phoneApi.close();
+stop();
+await server.close();
+```
+
+The runnable version of this page is `packages/server-sdk/examples/minimal.ts`; the full API is in `packages/server-sdk/README.md`, both in the source repository.
+
+## Next \{#next}
+
+- [Protocol](/docs/protocol) for actions, states and services.
+- [Errors and limits](/docs/errors-and-limits#request-errors) for every error code.

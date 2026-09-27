@@ -1,0 +1,12 @@
+{
+  "label": "Use the app",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "slug": "/use-the-app",
+    "title": "Use the app",
+    "description": "Task guides for SAC on your phone: connect a wallet, add servers and feeds, review what arrives, set rules, and read the results."
+  },
+  "collapsible": true,
+  "collapsed": true
+}

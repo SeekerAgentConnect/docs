@@ -1,0 +1,115 @@
+---
+title: Connect to the SAC gateway
+description: "Onboard with the SAC team: what you send, what you receive, and where each value goes in your feed server or direct server."
+slug: /connect-to-gateway
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The SAC gateway is operated by the SAC team. You do not deploy or administer it: you integrate your server with it. Onboarding is a request to the team, not a self-service step. There is no signup API or portal.
+
+You need a gateway registration when:
+
+- you **publish a feed**, Public or Restricted; or
+- you run a **direct server** (an MCP server or your own SDK server) and want the gateway to **wake the phone** through the SAC relay while the app is closed.
+
+A direct server needs no registration to pair and serve requests; registration only adds push.
+
+## Step 1: Prepare what you send \{#what-you-send}
+
+| You send | For | Notes |
+| --- | --- | --- |
+| A display name for your server | All | How the team recognises it |
+| What it is for: publishing a feed, the push relay, or both | All | A relay-only registration publishes nothing and needs no manifest |
+| The environment: **sandbox** or **production** | Feeds | Each is its own registration with its own server ID. Start with sandbox |
+| **Public** or **Restricted** | Feeds | Public unless you ask |
+| Your **authentication origin** | Restricted feeds | The public HTTPS origin where phones prove their wallet to your server, such as `https://auth.example.com`. No path, query or fragment. It must match your server's `PUBLISHER_AUTH_ORIGIN` character for character |
+| Your server's host, and an existing server ID if you already have one | Optional | A server ID is a lowercase UUID |
+
+Never send a wallet key, a seed phrase, or your own API tokens.
+
+## Step 2: Request onboarding \{#request-onboarding}
+
+Contact the SAC team with the values above. The team registers your server and replies with its credentials. Until they do, your server cannot publish or relay.
+
+## Step 3: Store what you receive \{#what-you-receive}
+
+| You receive | What it is |
+| --- | --- |
+| **Server ID** | Your server's identity at the gateway. Your feed's channel is `server/<server ID>` |
+| **Credential** | A bearer secret, shown to you once. For a feed it is the publisher credential; for the relay, a relay credential. The gateway stores only its hash |
+| **Gateway address** | The origin phones read your feed from, and your manifest names |
+| **Publisher API address** | Where your server sends publications. Often the same origin as the gateway address |
+
+Keep the credential in secret storage: never in a page, an app, a feed link, or source control. A publisher credential cannot relay, and a relay credential cannot publish.
+
+## Step 4: Configure your server \{#configure}
+
+<Tabs groupId="gateway-client">
+<TabItem value="feed-demo" label="Feed: demo servers" default>
+
+The demo feed servers in the source repository, and any server built on its Go publisher library, read:
+
+```sh
+PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+PUBLISHER_GATEWAY_URL=https://gateway.example.com     # the gateway address
+PUBLISHER_PUBLISH_URL=https://gateway.example.com     # the publisher API address; empty means the same
+PUBLISHER_ENVIRONMENT=sandbox                         # as registered
+BROADCAST_CREDENTIAL=replace-with-publisher-credential
+# Restricted feeds only:
+PUBLISHER_AUTH_ORIGIN=https://auth.example.com
+```
+
+`PUBLISHER_GATEWAY_URL` must match the gateway address character for character: the gateway checks it against your manifest.
+
+</TabItem>
+<TabItem value="feed-custom" label="Feed: your own backend">
+
+Send every call to `<publisher API address>/seekervault.gateway.v1.PublisherService/<Method>` with `Authorization: Bearer <credential>` and a JSON body. Name the gateway address and your channel in your manifest:
+
+```json
+"feed": { "gatewayUrl": "https://gateway.example.com", "channel": "server/3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
+```
+
+For a Restricted feed, the manifest's `feed` also states `"access": {"policy": "FEED_ACCESS_POLICY_RESTRICTED", "authOrigin": "https://auth.example.com"}`. Walk through the calls on [Publish your first feed](/docs/publish-your-first-feed).
+
+</TabItem>
+<TabItem value="relay" label="Direct server: push relay">
+
+Set all three, or none:
+
+| Server | Gateway address | Server ID | Relay credential |
+| --- | --- | --- | --- |
+| General SAC MCP server | `RELAY_URL` | `RELAY_SERVER_ID` | `RELAY_CREDENTIAL` |
+| SKR Staking MCP server | `SKR_STAKING_RELAY_URL` | `SKR_STAKING_RELAY_SERVER_ID` | `SKR_STAKING_RELAY_CREDENTIAL` |
+| Direct Server SDK | `relay.relayUrl` | `relay.serverId` | `relay.credential` |
+
+The server advertises the relay to its paired phone, which authorizes it; see [Enable push wake-ups](/docs/pair-your-phone#enable-push).
+
+</TabItem>
+</Tabs>
+
+## Step 5: Verify \{#verify}
+
+- **Feed:** publish your manifest and a heartbeat ([Publish your first feed](/docs/publish-your-first-feed)). A refusal with `unauthenticated` means the credential or the server ID is wrong.
+- **Restricted feed:** your server asks the gateway how it enforces your feed before publishing. It publishes only once the gateway confirms **Restricted at your origin** ([It fails closed](/docs/restricted-feeds#fails-closed)).
+- **Relay:** with SAC closed, create a request; the phone should get a notification. A relay `401` means the credential was not accepted.
+
+## Direct server push \{#direct-server-push}
+
+For a direct server, onboarding is the relay registration above: send a display name and say it is for the push relay. You receive a server ID, a relay credential and the gateway address, and set them as in the **Direct server: push relay** tab. Nothing about your requests passes through the gateway; it sends only a content-free wake-up.
+
+## Later changes \{#later-changes}
+
+| You want to | Do this |
+| --- | --- |
+| Rotate a credential | Ask the SAC team for a second credential, switch your server to it, then ask for the old one to be revoked. Never the other way round |
+| Switch between Public and Restricted, or change the authentication origin | Ask the SAC team. Afterwards, publish your manifest again so the policy it states matches. A change does not revoke access you already granted; that remains your job ([Manage subscriber access](/docs/manage-subscriber-access)) |
+| Go from sandbox to production | Ask for a production registration. It has its own server ID and feed link, and subscribers add it separately |
+| Stop | Ask the SAC team to remove the registration |
+
+## Next \{#next}
+
+[Publish your first feed](/docs/publish-your-first-feed)

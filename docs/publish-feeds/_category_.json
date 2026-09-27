@@ -1,0 +1,12 @@
+{
+  "label": "Publish feeds",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "slug": "/publish-feeds",
+    "title": "Publish feeds",
+    "description": "Publish signals once through the SAC gateway and reach everyone who added your feed, or only the subscribers you approved. Read these in order."
+  },
+  "collapsible": true,
+  "collapsed": true
+}

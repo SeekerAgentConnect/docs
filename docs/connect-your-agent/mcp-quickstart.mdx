@@ -1,0 +1,188 @@
+---
+title: General SAC MCP server
+description: "Run the general SAC MCP server, connect your agent, pair your phone, and read the result of a first request that moves no funds."
+slug: /mcp-quickstart
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The general SAC MCP server sits between your AI agent and your phone. The agent asks over MCP; the server stores the request and shows it to your paired phone; you decide on the phone; the agent reads the result. The server holds no key and cannot approve anything itself.
+
+**What it can ask for:** an acknowledgement, a message signature, and a SOL or SPL-token transfer. There is no swap or staking tool on this server; staking has its [own server](/docs/skr-staking-server), and swaps and prediction orders come through [feeds](/docs/publish-feeds). Every tool is listed on [MCP tools](/docs/mcp-tools).
+
+## Prerequisites \{#prerequisites}
+
+- **Node 24.21 or newer** (the server uses the built-in `node:sqlite`), or Docker.
+- **SAC on an Android phone**, with a wallet connected ([Connect your wallet](/docs/wallet-setup)) on the network your agent will use.
+- An **MCP client** that speaks Streamable HTTP: Hermes, OpenClaw, Claude, or another.
+- For transfers only: a Solana RPC endpoint for that network (`SOLANA_RPC_URL`).
+
+## Step 1: Run the server \{#run-the-server}
+
+Every setup needs two different random tokens: `MCP_TOKEN` for your agent and `PHONE_TOKEN` for the phone API. Generate each with `openssl rand -hex 32`.
+
+<Tabs groupId="mcp-install">
+<TabItem value="source" label="From source" default>
+
+From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac), with pnpm:
+
+```sh
+pnpm install --frozen-lockfile
+cp .env.example .env          # set MCP_TOKEN and PHONE_TOKEN to two different values
+pnpm dev:mcp-server
+curl http://127.0.0.1:8080/healthz   # {"status":"ok"}
+```
+
+The development `.env.example` turns on `MCP_DEMO_TOOLS`, which the first request below uses.
+
+</TabItem>
+<TabItem value="npm" label="npm package">
+
+The server is packaged as `@seeker_agent_connect/mcp-server`, with the command `seeker-agent-connect-mcp`:
+
+```sh
+mkdir -p ~/.seeker-agent-connect
+cat > ~/.seeker-agent-connect/config.env <<'ENV'
+MCP_SERVER_DATA_DIR=/home/you/.seeker-agent-connect
+DATABASE_PATH=direct-server.db
+SIDECAR_HOST=127.0.0.1
+SIDECAR_PORT=8080
+SIDECAR_PUBLIC_URL=http://127.0.0.1:8080
+MCP_TOKEN=replace-with-a-random-token
+PHONE_TOKEN=replace-with-a-different-random-token
+MCP_ENABLED=true
+MCP_DEMO_TOOLS=true
+LIVE_COMMAND_TIMEOUT_SECONDS=60
+REQUEST_TTL_SECONDS=86400
+REQUEST_PENDING_LIMIT=100
+PAIRING_TOKEN_TTL_SECONDS=600
+ENV
+chmod 600 ~/.seeker-agent-connect/config.env
+
+npx --package=@seeker_agent_connect/mcp-server@next -- \
+  seeker-agent-connect-mcp --config ~/.seeker-agent-connect/config.env start
+```
+
+The server refuses to start half-configured and names what is missing.
+
+:::note
+The packages are release candidates on the `next` tag. If your registry cannot resolve `@seeker_agent_connect/mcp-server`, use the source tab.
+:::
+
+</TabItem>
+<TabItem value="docker" label="Docker">
+
+From a checkout of the source repository, one Compose project on loopback:
+
+```sh
+cp deploy/mcp/.env.example deploy/mcp/.env   # set MCP_TOKEN and PHONE_TOKEN
+docker compose --env-file deploy/mcp/.env -f deploy/mcp/compose.yaml up -d --build
+```
+
+The container keeps its SQLite database in a named volume, so a restart keeps the server identity, the pairing and every request.
+
+</TabItem>
+</Tabs>
+
+:::warning[Not a stdio server]
+The server is a long-running HTTP service with MCP at `/mcp`. Do not put its command in an agent's MCP `command`/`args` fields; point the agent at the URL instead.
+:::
+
+**Expected result:** `http://127.0.0.1:8080/healthz` answers `{"status":"ok"}`.
+
+## Step 2: Connect your agent \{#connect-your-agent}
+
+Point your agent at `http://127.0.0.1:8080/mcp` with the header `Authorization: Bearer <MCP_TOKEN>`. Ready-made configurations for Hermes, OpenClaw, Claude and a generic client are on [Connect your agent](/docs/connect-your-agent).
+
+**Expected result:** the agent lists the `vault_*` tools. Ask it to call `vault_get_capabilities`; it always answers.
+
+## Step 3: Pair your phone \{#pair-your-phone}
+
+Ask the agent to connect your phone. It calls `vault_create_pairing_link` and shows you a link; you open it on the phone and tap **Pair**. From a terminal, `pnpm pair` (source) or `seeker-agent-connect-mcp --config … pair` (npm) prints the same code as a QR.
+
+The details, including how the phone reaches a server on your computer, are on [Pair your phone and enable push](/docs/pair-your-phone).
+
+**Expected result:** `vault_get_address` returns the wallet address and network you connected in SAC.
+
+## Step 4: Send a first request \{#first-request}
+
+Start with a request that moves no funds.
+
+<Tabs groupId="first-request">
+<TabItem value="ack" label="Acknowledgement" default>
+
+With `MCP_DEMO_TOOLS=true` (development only), ask the agent to call `vault_request_ack` with a short text, or from a source checkout:
+
+```sh
+pnpm agent ack "Deploy finished. OK?"
+```
+
+On the phone the request says **Acknowledge** or **Reject**. The wallet never opens.
+
+</TabItem>
+<TabItem value="sign" label="Message signature">
+
+Ask the agent to call `vault_sign_message` with a short text and an `idempotency_key`, or from a source checkout:
+
+```sh
+pnpm agent sign "hello"
+```
+
+On the phone, tap **Approve and sign**, then confirm in Seed Vault Wallet. Signing a message moves no funds and works on any network the wallet offers.
+
+</TabItem>
+</Tabs>
+
+**Expected result:** the tool answers at once with the request in state `PENDING`. That means stored, not seen and not approved. The request appears in the SAC Inbox.
+
+## Step 5: Read the result \{#read-the-result}
+
+Poll `vault_get_request` with the `request_id` until `terminal` is true:
+
+```sh
+pnpm agent get <request_id>      # the request as it is now
+pnpm agent wait <request_id>     # keep reading until it settles, then print the outcome
+```
+
+| The agent reads | Meaning |
+| --- | --- |
+| `PENDING` | Waiting for you on the phone |
+| `COMPLETED` | Acknowledged, or signed; the signature is in the result |
+| `CONFIRMED` | A transfer landed on chain |
+| `SUBMITTED` | A transfer was sent but is not confirmed yet. Not success |
+| `REJECTED`, `CANCELLED`, `EXPIRED`, `FAILED` | Not done, and why |
+| `UNKNOWN` | The wallet never reported. Never retry: the transaction may already be on chain |
+
+To withdraw a request you no longer need, call `vault_cancel_request` while it is still `PENDING`. Every creating tool takes an `idempotency_key`; the same key returns the same request, so a retry never creates two. The full lifecycle is on [Protocol](/docs/protocol#lifecycle).
+
+## Step 6: Enable push (optional) \{#enable-push}
+
+While SAC is open, requests arrive live. To wake the phone when it is closed, register the server for the SAC relay and set `RELAY_URL`, `RELAY_SERVER_ID` and `RELAY_CREDENTIAL`. See [Enable push wake-ups](/docs/pair-your-phone#enable-push).
+
+## Transfers \{#transfers}
+
+`vault_transfer` asks the owner to send SOL or a classic SPL token. It is served only when `SOLANA_RPC_URL` is set, and the RPC endpoint must be on the network the owner's wallet is connected to; the server never chooses a network. Token-2022 tokens and NFTs are refused. Try it on devnet before mainnet.
+
+## Hosting it \{#hosting}
+
+A hosted server needs public HTTPS with HTTP/2 end to end, because live updates are a stream, and its hostname in `MCP_ALLOWED_HOSTS` if an agent reaches it by name. The Docker preset's `compose.tls.yaml` overlay terminates TLS in the server itself on port 8443; behind a platform that terminates HTTP/2 for you, set `SIDECAR_H2C=true` instead. The full runbook is `deploy/README.md` in the source repository.
+
+## Troubleshooting \{#troubleshooting}
+
+| Symptom | What to do |
+| --- | --- |
+| The server will not start and names a variable | Set it; every variable in the config above is required for the npm command |
+| The agent gets `401` | The `Authorization` header does not carry `MCP_TOKEN` |
+| `NOT_PAIRED` | Pair the phone ([Step 3](#pair-your-phone)) |
+| `WALLET_NOT_CONNECTED` | Connect a wallet in SAC |
+| `vault_transfer` is missing | Set `SOLANA_RPC_URL` |
+| `vault_request_ack` is missing | It is a development tool; set `MCP_DEMO_TOOLS=true`, or use `vault_sign_message` |
+
+Every error code is on [Errors and limits](/docs/errors-and-limits).
+
+## Next \{#next}
+
+- [SKR Staking MCP server](/docs/skr-staking-server), if you also stake SKR.
+- [Build on the Direct Server SDK](/docs/server-sdk), to put the same engine in your own backend.

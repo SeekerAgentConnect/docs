@@ -1,0 +1,12 @@
+{
+  "label": "Connect your agent",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "slug": "/mcp-servers",
+    "title": "Connect your agent",
+    "description": "Run one of the two supplied MCP servers, connect your AI agent to it, pair your phone, and read the result of your first request."
+  },
+  "collapsible": true,
+  "collapsed": true
+}
