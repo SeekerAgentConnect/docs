@@ -57,7 +57,7 @@ Share it with your audience any way you like: a page, a QR code, a message. It c
 
 ## What you publish {#what-you-publish}
 
-- A **manifest**: your display name, the environment you serve (sandbox or production), and which action plugin your signals need.
+- A **manifest**: your display name, the environment you serve (sandbox or production), which action plugin your signals need, and the Solana networks they execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)).
 - **Signals**: the terms of an action, such as a swap pair or a prediction market. Never an amount or a side: each subscriber chooses those. See [Supported actions](/docs/plugins-and-actions).
 - **Updates** and **withdrawals**, as higher revisions of the same signal.
 - A **heartbeat** when you have nothing to publish, so your feed reads as online.

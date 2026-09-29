@@ -18,6 +18,8 @@ Requests from your servers and signals from feeds wait in one list: the **Pendin
 | Swap | A feed | Enter your part, **Get a quote and prepare**, then **Approve and swap**, or **Simulate** in sandbox | Production only | Production only |
 | Prediction order | A feed | Choose your side and amount, then **Approve and trade**, or **Simulate the trade** in sandbox | Production only | Production only |
 
+Every request is reviewed and signed with the wallet you chose for its connection, and the review names it. A request that needs another address or network is never signed with a different wallet: it cannot be approved until the connection's wallet matches ([Wallet status](/docs/connecting-servers#wallet-status)).
+
 Not every request opens the wallet. An acknowledgement ends in SAC. A sandbox simulation stops before signing: *No wallet is opened, no transaction exists.* Everything else opens Seed Vault Wallet with exactly the transaction or message you reviewed.
 
 ## Step 1: Read what the phone checked {#read-the-review}
@@ -33,12 +35,14 @@ A feed signal never carries your amount or side. The publisher names the terms; 
 - **Swap:** the **Amount to swap**, within the publisher's bounds, and optionally **Most the price may move (basis points)**, up to the publisher's ceiling. Then **Get a quote and prepare**: the phone fetches a quote, builds the transaction and reads it back.
 - **Prediction order:** **Your side and amount**: **Yes** or **No**, and how much. The phone reads the market's prices and rules from the venue at that moment, not from the publisher.
 
-A prepared quote is good for about a minute. When it runs out, prepare again for a fresh one.
+A prepared quote is good for about a minute. When it runs out, prepare again for a fresh one. If you change the feed's wallet while a review is open, what was prepared is dropped: prepare again for the new wallet.
+
+SAC checks the connection's wallet once more just before the wallet app opens. If it changed, was removed, or needs reconnecting in the meantime, nothing is signed.
 
 ## Step 3: Decide {#decide}
 
 1. Tap the approve button. If your rules flagged something, first tick **I have read the warnings above and want to go ahead anyway**.
-2. The wallet opens with exactly what you reviewed and asks again. Confirm there, or decline; declining in the wallet counts as a rejection.
+2. The wallet app that holds the connection's wallet opens with exactly what you reviewed and asks again. Confirm there, or decline; declining in the wallet counts as a rejection.
 
 Or tap **Reject** (direct requests), **Hide this signal** (swap signals) or **Dismiss** (prediction signals). For a feed signal, the publisher is never told either way.
 
@@ -46,7 +50,7 @@ Or tap **Reject** (direct requests), **Hide this signal** (swap signals) or **Di
 
 ## Sandbox {#sandbox}
 
-A sandbox signal says **Sandbox · no funds will move**. The phone fetches the same market data and builds the same transaction as in production, then **Simulate** records **Simulated** and stops. Nothing is signed, nothing is sent, the wallet never opens. Sandbox is not a Solana network: swaps and prediction orders need a **Mainnet** wallet in both environments.
+A sandbox signal says **Sandbox · no funds will move**. The phone fetches the same market data and builds the same transaction as in production, then **Simulate** records **Simulated** and stops. Nothing is signed, nothing is sent, the wallet never opens. Sandbox is not a Solana network: swaps and prediction orders need a **Mainnet** wallet chosen for the feed in both environments.
 
 ## Next {#next}
 

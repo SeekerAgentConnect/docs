@@ -38,9 +38,31 @@ Approval is the commit point: the phone names the exact prepared version it revi
 
 ## The manifest {#manifest}
 
-Every server publishes `seekervault.server.v1.ServerManifest`: `server_id`, `protocol_version` (1), `settings_revision`, `mode` (`CONNECTION_MODE_DIRECT` or `CONNECTION_MODE_GATEWAY_FEED`), `required_plugins` (at most 16), `environments`, an optional `display_name`, and one reference: `direct { url }` or `feed { gateway_url, channel, access }`. A manifest cannot install code, ask for a permission, or name a wallet. A retired third mode keeps its numbers reserved.
+Every server publishes `seekervault.server.v1.ServerManifest`: `server_id`, `protocol_version` (1), `settings_revision`, `mode` (`CONNECTION_MODE_DIRECT` or `CONNECTION_MODE_GATEWAY_FEED`), `required_plugins` (at most 16), `environments`, an optional `display_name`, and one reference: `direct { url, supported_networks }` or `feed { gateway_url, channel, access, supported_networks }`. A manifest cannot install code, ask for a permission, or name a wallet. A retired third mode keeps its numbers reserved.
 
 `feed.access` is `FeedAccess { policy, auth_origin }`, with `policy` `FEED_ACCESS_POLICY_PUBLIC` or `FEED_ACCESS_POLICY_RESTRICTED`. An absent `access` means Public. The gateway **stamps** this field from the feed's registration on every manifest it serves, and refuses a published manifest that claims another policy or origin (`ACCESS_MISMATCH`). A Restricted feed must state the policy and the registered origin; a Public feed may say nothing. The phone sends a wallet proof only to the stamped `auth_origin`, never to an address from a link.
+
+### Supported networks {#supported-networks}
+
+`supported_networks` is a repeated `seekervault.server.v1.SolanaNetwork`: `SOLANA_NETWORK_MAINNET` (1), `SOLANA_NETWORK_DEVNET` (2) or `SOLANA_NETWORK_TESTNET` (3), the same numbers the request contract's `Network` uses. It sits inside the reference, `DirectServer` field 2 and `GatewayFeed` field 4, so that the reference stays the last thing in a serialized manifest in every runtime. In JSON it is `direct.supportedNetworks` or `feed.supportedNetworks`:
+
+```json
+"feed": {
+  "gatewayUrl": "https://gateway.example.com",
+  "channel": "server/3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "supportedNetworks": ["SOLANA_NETWORK_MAINNET", "SOLANA_NETWORK_DEVNET"]
+}
+```
+
+- **Empty means no networks declared.** Never Mainnet, never every network. It is what a manifest from before the field existed reads as, and what a server whose requests never reach a wallet should publish. The phone shows such a connection but signs nothing for it.
+- **Canonical order is ascending.** A list in another order is the same statement; the gateway stores and serves it sorted.
+- **Refused:** `SOLANA_NETWORK_UNSPECIFIED`, a repeated value, and, at the gateway, a value it does not know (`bad_network`). The phone skips a value from a later version of the format that it does not know, and refuses a list longer than eight.
+- **It may change on a higher revision**, unlike `environments`. The same `settings_revision` with a different list is a conflict.
+- **It is not the environment.** `SERVER_ENVIRONMENT_PRODUCTION` is not Mainnet, and `SERVER_ENVIRONMENT_SANDBOX` is not Devnet or Testnet.
+
+What each server sets, and the deployment order, are on [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
+
+A direct server still holds **one wallet binding** per paired phone: the address and network of the wallet the owner chose for that connection. The phone publishes it only to that server, and a new binding cancels that server's `PENDING` requests it no longer fits. A feed receives no binding: the wallet a subscriber chose for a feed stays on the phone.
 
 ## Services {#services}
 

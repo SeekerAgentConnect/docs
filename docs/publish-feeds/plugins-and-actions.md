@@ -24,7 +24,7 @@ One execution provider, **Jupiter**, serves two actions. Manifests and signals n
 | `jupiter.swap` | `swap` | The amount, and slippage within your ceiling | Mainnet only |
 | `jupiter.prediction` | `prediction.buy` | Yes or No, and the stake | Mainnet only |
 
-Both work in sandbox and production. Neither is available on devnet: sandbox is not a Solana network.
+Both work in sandbox and production. Neither is available on devnet: sandbox is not a Solana network. A feed that publishes them declares `SOLANA_NETWORK_MAINNET` in `feed.supportedNetworks`, and its subscribers choose a Mainnet wallet for it.
 
 | Environment | What the phone does when the owner decides |
 | --- | --- |

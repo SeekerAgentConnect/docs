@@ -19,7 +19,7 @@ sidebar_position: 1
 - A **Restricted** sandbox registration at your authentication origin, for example `https://copytrading.example.com`, and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - A checkout of the source repository with Go, or Docker.
 - A public HTTPS route from your authentication origin to the demo's `/access/v1` endpoint.
-- SAC on a phone with a Mainnet wallet, to test as a subscriber.
+- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it.
 
 ## Step 1: Run the demo {#run-the-demo}
 
@@ -31,12 +31,15 @@ PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d \
 PUBLISHER_GATEWAY_URL=https://gateway.example.com \
 PUBLISHER_PUBLISH_URL=https://gateway.example.com \
 PUBLISHER_ENVIRONMENT=sandbox \
+PUBLISHER_SUPPORTED_NETWORKS=mainnet \
 PUBLISHER_DATABASE_PATH=./copytrading.db \
 PUBLISHER_AUTH_ORIGIN=https://copytrading.example.com \
 BROADCAST_CREDENTIAL=replace-with-publisher-credential \
 PUBLISHER_API_TOKEN=$(openssl rand -base64 32) \
 go run ./cmd/copytrading
 ```
+
+`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter swaps run on Mainnet only, in sandbox too, so the demo refuses `devnet` or `testnet`.
 
 Or with Docker: the `deploy/copytrading` Compose project, with the same values in `deploy/copytrading/.env`.
 
