@@ -71,6 +71,36 @@ The publisher's `/access/v1` answers `{"error": "<code>", "detail": "…"}`:
 
 Relay calls answer `401` for a bad credential, `403` for a handle that does not authorize this server, `429` for rate, and `503` when the gateway cannot send right now. None of them fails a request.
 
+## Swaps and predictions {#swaps-and-predictions}
+
+The phone prepares swaps and prediction orders by calling Jupiter itself. These are what the owner can meet; a publisher never sees them.
+
+| Code | What the owner sees | What to do |
+| --- | --- | --- |
+| `provider_unreachable` | The provider could not be reached; nothing was prepared | Check the connection and prepare again |
+| `provider_rate_limited` | Wait a moment and prepare again | Wait, then prepare again. Nothing retries by itself |
+| `no_route` | There is no direct route right now | Try another amount or later |
+| `provider_refused` | The provider refused | Prepare again later; the status is logged, never the body |
+| `provider_unusable` | The answer could not be used | Prepare again. Covers a missing field, a quote for another pair, amount or slippage, more hops than asked, and a service fee nobody asked for or at another rate |
+| `would_fail` | The provider tried it and it failed, in the provider's own words | Most often insufficient funds: top up the input token or SOL |
+
+A prediction order also reports insufficient funds, a market that closed between the read and the order, and a market the provider does not have (`404`) as themselves. None of these produces an approximate preparation.
+
+**Service-fee findings.** A finding in the transaction means no Approve button:
+
+| Finding | Meaning |
+| --- | --- |
+| `platform_fee` | A fee in a swap that should carry none |
+| `fee_rate_mismatch` | The fee rate is not the one shown |
+| `fee_account_mismatch` | The fee goes to another account than the verified recipient, or is missing |
+| `fee_mint_mismatch` | The fee is taken in another token than the one shown |
+
+**Fee not charged is not an error.** In a build with a service fee, a swap into a token it has no account for (*not charged on this pair*), or whose fee account fails the on-chain check (*its fee account could not be verified*), goes ahead with no fee. The History records why (`fee_account_missing`, `fee_account_not_token_account`, `fee_account_other_mint`, `fee_account_other_owner`, `fee_account_not_usable`, `fee_account_unreadable`, `fee_account_no_rpc`). See [SAC swap service fee](/docs/swap-service-fee#policy).
+
+**Availability.** Swaps use Metis, Jupiter's v1 Swap API, which Jupiter marks as superseded by Swap V2 and no longer actively developed. If v1 stops answering or changes the transactions it returns, swaps stop preparing (the owner sees one of the codes above) rather than showing something the phone cannot check. The Prediction API is in beta by Jupiter's own description.
+
+**Rate limits.** The app uses Jupiter's keyless access: 0.5 requests per second, 30 per minute, shared by everything the phone asks. Preparing a swap takes two calls and an order three, so this suits a person deciding about a signal, not polling. Limits are Jupiter's and can change; see [Jupiter's API plans](https://developers.jup.ag/docs/portal/plans).
+
 ## Limits {#limits}
 
 | Limit | Value |
@@ -89,7 +119,9 @@ Relay calls answer `401` for a bad credential, `403` for a handle that does not 
 | Signal terms | 32 per signal, each value at most 512 bytes; publisher note at most 1024 bytes |
 | Publisher call body | 64 KiB |
 | Relay wake-ups per phone | One every two seconds; extra ones are merged |
-| Prediction order minimum | Five dollars of the stake token |
+| Prediction order minimum | Five dollars of the stake token (Jupiter's current minimum, which it may change) |
+| SAC swap service fee | `0` by default; a build may set `0` to `100` basis points (1%) of the swap's output |
+| Jupiter keyless rate | 0.5 requests per second, 30 per minute ([plans](https://developers.jup.ag/docs/portal/plans)) |
 | Swap or prediction preparation | Good for about a minute, then prepare again |
 | Restricted feed: access grant | 6 hours by default (`PUBLISHER_ACCESS_GRANT_HOURS`, 1 to 720), renewed when a third is left |
 | Restricted feed: longest grant the gateway honours | 24 hours by default; `DescribeAccess` reports it as `most_grant_seconds` |

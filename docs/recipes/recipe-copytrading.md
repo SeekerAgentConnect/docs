@@ -13,6 +13,7 @@ sidebar_position: 1
 | **Starting point** | The CopyTrading demo feed server, `examples/demo-signals` in the [source repository](https://github.com/SeekerAgentConnect/sac) |
 | **Access decisions** | By hand on the demo's Devices page; for automatic approval see [Paid membership](/docs/recipe-paid-membership) |
 | **Action** | `jupiter.swap`: you name the pair and a slippage ceiling, each subscriber chooses the amount |
+| **Swap routing** | Metis, Jupiter's v1 Swap API, called from each subscriber's phone. SAC shows it as **Metis · Powered by Jupiter** |
 
 ## Prerequisites {#prerequisites}
 
@@ -95,13 +96,24 @@ Or from the trader page, where you post, update and withdraw signals by hand. Yo
 
 Each approved subscriber sees a **Swap signal** in the Inbox with your note. They enter an amount, **Get a quote and prepare**, then **Simulate** in sandbox or **Approve and swap** in production. Their decision, amount and signature stay on their phone.
 
+## What each subscriber reviews and signs {#what-subscribers-sign}
+
+1. **Prepare.** Their phone asks Metis directly for a quote and an unsigned transaction, sending the two mints, the amount and their public wallet address. Your server and the gateway are not involved and learn nothing about the trade.
+2. **Review.** The phone reads the transaction back and shows **Swap routing: Metis · Powered by Jupiter**, the SAC service fee row, the priority fee, **Quoted now, after fees** and **You receive at least**. If the bytes do not match your terms and their choice, there is no Approve button.
+3. **Sign.** **Approve and swap** opens their own wallet, which signs and sends. SAC never holds their keys.
+
+**Quote and minimum.** *Quoted now, after fees* is what the route would pay at this moment. *You receive at least* is that quote less the slippage the subscriber allowed, up to your `max_slippage_bps`. The transaction fails rather than pay less than the minimum. Both figures are already net of every fee. A quote is good for about a minute.
+
+**Service fee.** The default SAC build adds no service fee, and the row reads `0%` with *network and pool costs still apply*. A build configured with one takes it from the swap's output, in the output token, only for output tokens it has a verified account for, and shows the rate, the estimated amount and the recipient before signing. You, as publisher, cannot set, change or receive it. See [SAC swap service fee](/docs/swap-service-fee).
+
 A subscriber you have not approved sees *Waiting for the publisher to approve this device.* and no signals. One you revoked sees that their access was revoked; signals already delivered stay on their phone.
 
 ## Going to production {#production}
 
-Sandbox lets followers rehearse with real quotes and no risk. When you are ready, ask for a production registration (Restricted, with its authentication origin), run the demo with `PUBLISHER_ENVIRONMENT=production` and the new server ID, and share its link. Each subscriber asks for access to that feed separately. Every setting is in `examples/demo-signals/README.md`.
+Sandbox lets followers rehearse with real quotes and no risk. Production swaps are real Solana mainnet transactions: each subscriber needs a Mainnet wallet holding the input token and a little SOL for network fees. When you are ready, ask for a production registration (Restricted, with its authentication origin), run the demo with `PUBLISHER_ENVIRONMENT=production` and the new server ID, and share its link. Each subscriber asks for access to that feed separately. Every setting is in `examples/demo-signals/README.md`.
 
 ## Next {#next}
 
 - [Paid membership](/docs/recipe-paid-membership): approve paying members automatically.
 - [Manage subscriber access](/docs/manage-subscriber-access)
+- [SAC swap service fee](/docs/swap-service-fee)

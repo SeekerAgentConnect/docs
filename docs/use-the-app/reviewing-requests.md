@@ -30,7 +30,7 @@ If the phone cannot read a transaction, or the bytes do not match the request, t
 
 A feed signal never carries your amount or side. The publisher names the terms; you fill in **Your part** on the phone, and it stays there.
 
-- **Swap:** the **Amount to swap**, within the publisher's bounds, and optionally **Most the price may move (basis points)**, up to the publisher's ceiling. Then **Get a quote and prepare**: the phone fetches a quote, builds the transaction and reads it back.
+- **Swap:** the **Amount to swap**, within the publisher's bounds, and optionally **Most the price may move (basis points)**, up to the publisher's ceiling. Then **Get a quote and prepare**: the phone asks Metis, Jupiter's v1 Swap API, for a quote and an unsigned transaction, and reads the transaction back.
 - **Prediction order:** **Your side and amount**: **Yes** or **No**, and how much. The phone reads the market's prices and rules from the venue at that moment, not from the publisher.
 
 A prepared quote is good for about a minute. When it runs out, prepare again for a fresh one.
@@ -44,6 +44,39 @@ Or tap **Reject** (direct requests), **Hide this signal** (swap signals) or **Di
 
 **Expected result:** the request moves to **History** with its outcome, and the sender of a direct request can read your answer. See [History and results](/docs/history-and-results).
 
+## What a swap review shows {#swap-review}
+
+A **Who carries this out** card names the integration: **Swap routing: Metis · Powered by Jupiter**. Metis is not Jupiter Ultra, and a swap here is not the same as trading on jup.ag. Neither Jupiter nor the publisher endorses SAC. The card links Jupiter's docs, terms and privacy policy.
+
+After **Get a quote and prepare**, the facts read from the transaction include:
+
+| Row | What it is |
+| --- | --- |
+| **Swap routing** | `Metis · Powered by Jupiter` |
+| **SAC service fee, taken from what you receive** | The rate this build charges, for example `0.2%` |
+| **SAC service fee, estimated** | The provider's estimate of the fee, in the token you receive |
+| **SAC service fee recipient** | The public token account that receives it |
+| **Priority fee (SOL)** | A network cost, separate from the service fee |
+| **Quoted now, after fees** | What the route pays at this moment, net of every fee |
+| **You receive at least** | The quote less the price movement you allowed. The transaction fails rather than pay less |
+
+The default SAC build charges no service fee: the row reads **SAC service fee (network and pool costs still apply)** `0%`. A swap is never free: network, priority and pool costs still apply. A build that charges a fee may still show `0%` with *not charged on this pair* or *not charged: its fee account could not be verified*; that swap carries no fee and is otherwise normal. Publishers and servers cannot set or change the fee. Details: [SAC swap service fee](/docs/swap-service-fee).
+
+If the transaction carries any fee other than the one shown, whether another rate, another recipient or another token, the review shows a finding and there is no Approve button.
+
+The last screen before the wallet opens repeats the routing and the service fee. The wallet then signs; SAC never holds your keys.
+
+## What a prediction review shows {#prediction-review}
+
+The venue is **Jupiter Prediction · Powered by Jupiter**, shown apart from the feed's publisher and from the market's own source (Polymarket, Kalshi, …). Before you commit, the review says:
+
+- orders are placed on Solana mainnet with real funds; there is no test network for it;
+- Jupiter's trading fee is included in the quoted cost, the network charges for the transaction, and SAC adds no fee; Jupiter's minimum order is currently $5;
+- Jupiter restricts some regions, currently including the United States and South Korea;
+- **Dismiss** spends nothing. An order may fill fully, partly or not at all, and a filled position cannot be cancelled for a refund: you can sell it at the current bid while the market is open, possibly at a loss, or hold it until it settles.
+
+**This market on Jupiter** opens the market in the Jupiter app if it is installed, otherwise in the browser. What happens after an order is on [History and results](/docs/history-and-results#prediction-positions).
+
 ## Sandbox {#sandbox}
 
 A sandbox signal says **Sandbox · no funds will move**. The phone fetches the same market data and builds the same transaction as in production, then **Simulate** records **Simulated** and stops. Nothing is signed, nothing is sent, the wallet never opens. Sandbox is not a Solana network: swaps and prediction orders need a **Mainnet** wallet in both environments.
@@ -53,3 +86,4 @@ A sandbox signal says **Sandbox · no funds will move**. The phone fetches the s
 - [Rules and warnings](/docs/rules)
 - [Notifications and live updates](/docs/notifications)
 - [History and results](/docs/history-and-results)
+- [SAC swap service fee](/docs/swap-service-fee)
