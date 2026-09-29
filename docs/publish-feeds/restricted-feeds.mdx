@@ -120,11 +120,13 @@ Each request reaches your eligibility rule:
 | **Manual approval** (the demo's default) | Every request waits for a person to approve or reject it |
 | **Your own rule**, for example a membership lookup | Eligible wallets are approved at once; ineligible ones are rejected; anything else waits for a person |
 
-Approving one device never approves another, even of the same wallet: a second phone is a second request. How to approve, reject, reissue, revoke and follow renewal is on [Manage subscriber access](/docs/manage-subscriber-access).
+Approving one device never approves another, even of the same wallet: a second phone is a second request.
+
+A subscriber chooses one wallet for each feed. The proof names an address and no Solana network, so a subscriber who moves your feed to the same address on another network keeps the access you granted, and one who moves it to another address sends you a new request. Access to your feed and to another publisher's feed are independent, even on the same phone. How to approve, reject, reissue, revoke and follow renewal is on [Manage subscriber access](/docs/manage-subscriber-access).
 
 ## Step 5: Verify end to end \{#verify}
 
-1. Add the link on a phone with a wallet connected, and sign the access message.
+1. Add the link on a phone with a wallet saved, choose that wallet for the feed, and sign the access message.
 2. The request appears as pending on your side.
 3. Approve it. On its next check, every few seconds while SAC is open, the phone connects and the feed's signals appear.
 4. Revoke it. After the gateway confirms, the phone shows that its access was revoked and receives nothing new.

@@ -15,7 +15,7 @@ The general SAC MCP server sits between your AI agent and your phone. The agent 
 ## Prerequisites \{#prerequisites}
 
 - **Node 24.21 or newer** (the server uses the built-in `node:sqlite`), or Docker.
-- **SAC on an Android phone**, with a wallet connected ([Connect your wallet](/docs/wallet-setup)) on the network your agent will use.
+- **SAC on an Android phone**, with a wallet saved ([Connect your wallets](/docs/wallet-setup)) on the network your agent will use.
 - An **MCP client** that speaks Streamable HTTP: Hermes, OpenClaw, Claude, or another.
 - For transfers only: a Solana RPC endpoint for that network (`SOLANA_RPC_URL`).
 
@@ -30,7 +30,8 @@ From a checkout of the [source repository](https://github.com/SeekerAgentConnect
 
 ```sh
 pnpm install --frozen-lockfile
-cp .env.example .env          # set MCP_TOKEN and PHONE_TOKEN to two different values
+cp .env.example .env          # set MCP_TOKEN and PHONE_TOKEN to two different values,
+                              # and SAC_SUPPORTED_NETWORKS, e.g. mainnet
 pnpm dev:mcp-server
 curl http://127.0.0.1:8080/healthz   # {"status":"ok"}
 ```
@@ -58,6 +59,7 @@ LIVE_COMMAND_TIMEOUT_SECONDS=60
 REQUEST_TTL_SECONDS=86400
 REQUEST_PENDING_LIMIT=100
 PAIRING_TOKEN_TTL_SECONDS=600
+SAC_SUPPORTED_NETWORKS=mainnet
 ENV
 chmod 600 ~/.seeker-agent-connect/config.env
 
@@ -83,8 +85,18 @@ docker compose --env-file deploy/mcp/.env -f deploy/mcp/compose.yaml up -d --bui
 
 The container keeps its SQLite database in a named volume, so a restart keeps the server identity, the pairing and every request.
 
+:::caution
+The Compose preset passes an explicit list of variables to the server, and `SAC_SUPPORTED_NETWORKS` is not on it yet. A server started from it declares no network, so an up-to-date phone signs nothing for it ([Declare the networks](#declare-networks)). Add the variable to the service's `environment` yourself, or run from source or npm.
+:::
+
 </TabItem>
 </Tabs>
+
+### Declare the networks \{#declare-networks}
+
+`SAC_SUPPORTED_NETWORKS` is the list of Solana networks your server's manifest declares: comma-separated `mainnet`, `devnet` and `testnet`, lowercase, each at most once, or `none`. SAC offers only your wallets on those networks when you pair, and signs nothing for this server on any other.
+
+It has **no default**. Unset or empty, the server declares no network, and an up-to-date phone shows the server but signs nothing for it: no message, no transfer. It is not read from `SOLANA_RPC_URL`; list the cluster that endpoint serves, plus any network you sign messages on. The startup log names the declared networks, or says there are none. Changing the list and restarting moves the manifest's revision, and the phone reads it again. More on [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
 
 :::warning[Not a stdio server]
 The server is a long-running HTTP service with MCP at `/mcp`. Do not put its command in an agent's MCP `command`/`args` fields; point the agent at the URL instead.
@@ -104,7 +116,9 @@ Ask the agent to connect your phone. It calls `vault_create_pairing_link` and sh
 
 The details, including how the phone reaches a server on your computer, are on [Pair your phone and enable push](/docs/pair-your-phone).
 
-**Expected result:** `vault_get_address` returns the wallet address and network you connected in SAC.
+After **Pair**, SAC opens the server's page with the wallet picker. Choose the wallet this server should use and tap **Use this wallet**.
+
+**Expected result:** `vault_get_address` returns the address and network of the wallet you chose for this server. Another server paired with the same phone sees only its own choice.
 
 ## Step 4: Send a first request \{#first-request}
 
@@ -130,7 +144,7 @@ Ask the agent to call `vault_sign_message` with a short text and an `idempotency
 pnpm agent sign "hello"
 ```
 
-On the phone, tap **Approve and sign**, then confirm in Seed Vault Wallet. Signing a message moves no funds and works on any network the wallet offers.
+On the phone, tap **Approve and sign**, then confirm in Seed Vault Wallet. Signing a message moves no funds and works on any network your server declares.
 
 </TabItem>
 </Tabs>
@@ -163,7 +177,7 @@ While SAC is open, requests arrive live. To wake the phone when it is closed, re
 
 ## Transfers \{#transfers}
 
-`vault_transfer` asks the owner to send SOL or a classic SPL token. It is served only when `SOLANA_RPC_URL` is set, and the RPC endpoint must be on the network the owner's wallet is connected to; the server never chooses a network. Token-2022 tokens and NFTs are refused. Try it on devnet before mainnet.
+`vault_transfer` asks the owner to send SOL or a classic SPL token. It is served only when `SOLANA_RPC_URL` is set, and the RPC endpoint must be on the network of the wallet the owner chose for this server, which must also be in `SAC_SUPPORTED_NETWORKS`; the server never chooses a network. Token-2022 tokens and NFTs are refused. Try it on devnet before mainnet.
 
 ## Hosting it \{#hosting}
 
@@ -176,7 +190,8 @@ A hosted server needs public HTTPS with HTTP/2 end to end, because live updates 
 | The server will not start and names a variable | Set it; every variable in the config above is required for the npm command |
 | The agent gets `401` | The `Authorization` header does not carry `MCP_TOKEN` |
 | `NOT_PAIRED` | Pair the phone ([Step 3](#pair-your-phone)) |
-| `WALLET_NOT_CONNECTED` | Connect a wallet in SAC |
+| `WALLET_NOT_CONNECTED` | Choose a wallet for this server on its page in SAC |
+| The phone says the server hasn't declared its networks, or will not sign | Set `SAC_SUPPORTED_NETWORKS` (for example `mainnet`) and restart |
 | `vault_transfer` is missing | Set `SOLANA_RPC_URL` |
 | `vault_request_ack` is missing | It is a development tool; set `MCP_DEMO_TOOLS=true`, or use `vault_sign_message` |
 

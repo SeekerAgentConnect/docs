@@ -5,7 +5,7 @@ slug: /user-troubleshooting
 sidebar_position: 8
 ---
 
-Find the message you see. Messages about a specific task are also on that task's page: [pairing](/docs/pair-your-phone#troubleshooting), [Restricted feeds](/docs/join-restricted-feed#troubleshooting), [notifications](/docs/notifications#troubleshooting) and [your wallet](/docs/wallet-setup#troubleshooting).
+Find the message you see. Messages about a specific task are also on that task's page: [pairing](/docs/pair-your-phone#troubleshooting), [Restricted feeds](/docs/join-restricted-feed#troubleshooting), [notifications](/docs/notifications#troubleshooting) and [your wallets](/docs/wallet-setup#troubleshooting).
 
 ## Connections \{#connections}
 
@@ -18,6 +18,19 @@ Find the message you see. Messages about a specific task are also on that task's
 | The pairing link is damaged | The link was shortened or changed before you opened it | Open the whole link, or paste the whole `seekervault://pair` line |
 | The server refused the code | The code was already used, expired, or a newer one replaced it | Ask for a new link |
 | The certificate isn't trusted | The server has no valid HTTPS certificate for that host name | The operator needs a publicly trusted certificate. Self-signed ones do not work |
+
+## Wallets \{#wallets}
+
+Each connection signs with the one wallet you chose for it. Its page shows that wallet and whether it can sign; every status is explained on [Connect a server or add a feed](/docs/connecting-servers#wallet-status).
+
+| The app says | What it means | What to do |
+| --- | --- | --- |
+| This connection has no wallet ready to sign | The connection has no wallet, its wallet was removed or needs reconnecting, or the server has not confirmed it | Open the connection and check its **Wallet** row |
+| This server hasn't declared which Solana networks it supports | The server is older than this app. SAC does not guess a network, so nothing from it is signed | Ask the server's operator to update it and declare its networks. Its requests stay readable |
+| This server no longer supports *network* | The server dropped the network your chosen wallet is on | Choose a wallet on a network it names. SAC never moves the connection for you |
+| That wallet's network isn't one this server supports. | You picked a wallet the server cannot use | Pick a wallet on one of the networks the picker names, or **Add wallet for** that network |
+| This feed's wallet changed since this review was prepared | You changed the feed's wallet while the review was open. Nothing was signed | Prepare it again for the new wallet |
+| The wallet no longer accepts this profile's authorization | The wallet app ended SAC's authorization for that account | **Reconnect** the wallet on the **Wallets** screen |
 
 ## Restricted feeds \{#restricted-feeds}
 
@@ -35,7 +48,7 @@ Every access state and message is explained on [Join a Restricted feed](/docs/jo
 | The app says | What it means | What to do |
 | --- | --- | --- |
 | No Approve button | The phone could not read the transaction, or it does not match the request | Nothing can be approved from it. Reject it, and tell the sender |
-| **Approve and sign** did not open the wallet | No wallet is connected, or it is on another network | Connect a wallet on the network the request names |
+| **Approve and sign** did not open the wallet | The connection's wallet is not ready, or it is on another network than the request names | Open the connection and check its **Wallet** row. A request for another address or network is never signed with a different wallet |
 | The quote and the transaction have expired | A prepared swap or order is good for about a minute | Prepare again for a fresh quote |
 | **Outcome unknown** | The wallet never reported what it did | Check the wallet's history or an explorer. Never retry from SAC |
 | Staking says the cooldown has not finished, or withdraw first | Read from the chain, not from the request | Wait, or withdraw first, then ask again |
@@ -45,7 +58,7 @@ Every access state and message is explained on [Join a Restricted feed](/docs/jo
 
 | The app says | What to do |
 | --- | --- |
-| A signal has no Approve button and says this build or wallet cannot serve it | The feed needs an action this app build does not carry, or a wallet on another network. Update the app, or connect a Mainnet wallet. Nothing is picked for you |
+| A signal has no Approve button and says this build or wallet cannot serve it | The feed needs an action this app build does not carry, or a wallet on another network. Update the app, or choose a Mainnet wallet for the feed. Nothing is picked for you |
 | This feed reference asks for an access policy this version of the app doesn't know | Update the app, or ask the publisher for a current link |
 | The publisher changed these terms | The publisher updated the signal while it was open. Read the new terms and prepare again |
 | Your rules changed while this was open | The review was made again. Read it and approve again if you still mean to |

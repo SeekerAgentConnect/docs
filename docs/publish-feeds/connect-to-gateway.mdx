@@ -57,6 +57,7 @@ PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 PUBLISHER_GATEWAY_URL=https://gateway.example.com     # the gateway address
 PUBLISHER_PUBLISH_URL=https://gateway.example.com     # the publisher API address; empty means the same
 PUBLISHER_ENVIRONMENT=sandbox                         # as registered
+PUBLISHER_SUPPORTED_NETWORKS=mainnet                  # the Solana networks your signals run on
 BROADCAST_CREDENTIAL=replace-with-publisher-credential
 # Restricted feeds only:
 PUBLISHER_AUTH_ORIGIN=https://auth.example.com
@@ -64,14 +65,22 @@ PUBLISHER_AUTH_ORIGIN=https://auth.example.com
 
 `PUBLISHER_GATEWAY_URL` must match the gateway address character for character: the gateway checks it against your manifest.
 
+`PUBLISHER_SUPPORTED_NETWORKS` is a comma-separated list of `mainnet`, `devnet` and `testnet`, or `none`. The two demos default to `mainnet` and refuse `devnet` or `testnet`, because Jupiter runs only on Mainnet. A server built on the library's plain configuration has no default: unset declares no network, and subscribers' phones then sign nothing from the feed. See [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
+
 </TabItem>
 <TabItem value="feed-custom" label="Feed: your own backend">
 
 Send every call to `<publisher API address>/seekervault.gateway.v1.PublisherService/<Method>` with `Authorization: Bearer <credential>` and a JSON body. Name the gateway address and your channel in your manifest:
 
 ```json
-"feed": { "gatewayUrl": "https://gateway.example.com", "channel": "server/3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" }
+"feed": {
+  "gatewayUrl": "https://gateway.example.com",
+  "channel": "server/3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "supportedNetworks": ["SOLANA_NETWORK_MAINNET"]
+}
 ```
+
+`supportedNetworks` lists the Solana networks your signals execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)).
 
 For a Restricted feed, the manifest's `feed` also states `"access": {"policy": "FEED_ACCESS_POLICY_RESTRICTED", "authOrigin": "https://auth.example.com"}`. Walk through the calls on [Publish your first feed](/docs/publish-your-first-feed).
 
