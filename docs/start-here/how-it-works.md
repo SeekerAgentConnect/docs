@@ -52,9 +52,9 @@ These are **execution environments**. They are not access policies, and they are
 | --- | --- | --- |
 | Available for | Feeds that offer it | Feeds, and every direct connection (direct is always production) |
 | What approving does | The phone fetches the same market data and builds the same transaction, then **Simulate** records **Simulated** and stops. Nothing is signed or sent | The wallet opens with exactly the transaction you reviewed |
-| Network | The same as production: swaps and prediction orders are mainnet transactions in both | Whatever the request names, and the wallet you connected |
+| Network | The same as production: swaps and prediction orders are mainnet transactions in both | Whatever the request names, on the wallet chosen for that connection |
 
-Mainnet, Devnet and Testnet are **Solana networks**, a separate choice you make when you [connect your wallet](/docs/wallet-setup#which-network).
+Mainnet, Devnet and Testnet are **Solana networks**. Each server or feed declares the networks it runs on, and you choose a wallet on one of them for that connection ([Connect your wallets](/docs/wallet-setup#which-network)).
 
 ## Approval is always on the phone {#approval}
 
@@ -72,6 +72,6 @@ An acknowledgement ends at step 1, and so does a sandbox simulation. Joining a R
 
 ## Next {#next}
 
-- Use the app: [Connect your wallet](/docs/wallet-setup)
+- Use the app: [Connect your wallets](/docs/wallet-setup)
 - Connect an agent: [General SAC MCP server](/docs/mcp-quickstart)
 - Build or publish: [Build your own server](/docs/direct-or-feed)

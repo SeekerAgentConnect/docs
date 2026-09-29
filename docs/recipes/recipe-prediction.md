@@ -19,7 +19,7 @@ To limit a feed to subscribers you approve instead, see [Copy trading](/docs/rec
 
 - A **Public** sandbox registration and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - A checkout of the source repository with Go, or Docker.
-- SAC on a phone with a Mainnet wallet, to test as a subscriber.
+- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it.
 
 ## Step 1: Run the demo with your filters {#run-with-filters}
 
@@ -31,6 +31,7 @@ PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d \
 PUBLISHER_GATEWAY_URL=https://gateway.example.com \
 PUBLISHER_PUBLISH_URL=https://gateway.example.com \
 PUBLISHER_ENVIRONMENT=sandbox \
+PUBLISHER_SUPPORTED_NETWORKS=mainnet \
 PUBLISHER_DATABASE_PATH=./prediction.db \
 BROADCAST_CREDENTIAL=replace-with-publisher-credential \
 PUBLISHER_API_TOKEN=$(openssl rand -hex 32) \
@@ -39,6 +40,8 @@ PREDICTION_KEYWORDS=bitcoin,solana \
 PREDICTION_MOST_OPEN=5 \
 go run ./cmd/prediction
 ```
+
+`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter's prediction markets settle on Mainnet only, so the demo refuses `devnet` or `testnet`.
 
 The `PREDICTION_*` settings are the filters: categories, keywords, how soon a market closes, the deposit range, how many stay open at once, and how often to poll. Or with Docker: the public image `ghcr.io/seekeragentconnect/demo-prediction` (the `compose/prediction` project in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository runs it with the same values).
 

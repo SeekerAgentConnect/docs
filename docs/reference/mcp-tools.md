@@ -14,7 +14,7 @@ Every tool answers at once. A creating tool stores a request in `PENDING`: store
 | Tool | What it does | Parameters |
 | --- | --- | --- |
 | `vault_get_capabilities` | What this server serves and its limits. Always answers | None |
-| `vault_get_address` | The wallet and network the owner connected, and when | None |
+| `vault_get_address` | The wallet and network the owner chose for this server, and when | None |
 | `vault_sign_message` | Asks the owner to sign a UTF-8 text message | `wallet`, `message` (at most 4096 bytes), `idempotency_key`, optional `note`, `expires_in_seconds` |
 | `vault_transfer` | Asks the owner to send SOL or a classic SPL token. Served only with `SOLANA_RPC_URL`; Token-2022 and NFTs are refused | `wallet`, `network`, `recipient`, `amount` (base units, string), optional `token_mint`, `idempotency_key`, optional `note`, `expires_in_seconds` |
 | `vault_get_request` | Reads a request and its result; for a sent transfer, also checks the chain | `request_id` |
@@ -23,7 +23,7 @@ Every tool answers at once. A creating tool stores a request in `PENDING`: store
 | `vault_request_ack` | A wallet-free acknowledgement. Development only, served with `MCP_DEMO_TOOLS=true` | `text`, `idempotency_key`, optional `note`, `expires_in_seconds` |
 | `vault_display_command` | A live diagnostic: shows text while the app is open and waits for **OK** | `text` |
 
-There is no swap or staking tool on this server. Swaps and prediction orders come through feeds; staking has its own server below. The network is the one the owner's wallet is connected on; the server never chooses one.
+There is no swap or staking tool on this server. Swaps and prediction orders come through feeds; staking has its own server below. The network is the one of the wallet the owner chose for this server; the server never chooses one. The networks the owner can choose from are the ones `SAC_SUPPORTED_NETWORKS` declares.
 
 ## SKR Staking MCP server {#skr-staking-server}
 
@@ -36,7 +36,7 @@ There is no swap or staking tool on this server. Swaps and prediction orders com
 | `request_withdraw` | Asks to withdraw what a finished cooldown released | `idempotency_key`, optional `note`, `expires_in_seconds` |
 | `skr_create_pairing_link` | The pairing link for this server | None |
 
-`amount` is SKR base units as a decimal integer string; SKR has six decimals, so 1 SKR is `"1000000"`. The wallet is never a parameter. There is no get or cancel tool: call the same creating tool again with the same `idempotency_key` and parameters to read the request as it stands now. A settled request carries `signature`, `detail` and, once the chain was read, `confirmation`, `slot`, `chain_error`, `checked_at` and `checked_with`. Mainnet-beta only.
+`amount` is SKR base units as a decimal integer string; SKR has six decimals, so 1 SKR is `"1000000"`. The wallet is never a parameter: it is the Mainnet wallet the owner chose for this server. There is no get or cancel tool: call the same creating tool again with the same `idempotency_key` and parameters to read the request as it stands now. A settled request carries `signature`, `detail` and, once the chain was read, `confirmation`, `slot`, `chain_error`, `checked_at` and `checked_with`. Mainnet-beta only.
 
 ## Shared rules {#shared-rules}
 

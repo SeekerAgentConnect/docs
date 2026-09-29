@@ -10,8 +10,8 @@ sidebar_position: 4
 | Code | Meaning |
 | --- | --- |
 | `NOT_PAIRED` | No phone is paired |
-| `WALLET_NOT_CONNECTED` | The owner has no wallet connected |
-| `WALLET_MISMATCH` | The wallet or network is not the one the owner connected |
+| `WALLET_NOT_CONNECTED` | The owner has not chosen a wallet for this server |
+| `WALLET_MISMATCH` | The wallet or network is not the one the owner chose for this server |
 | `INVALID_PARAMETERS` | A field is missing or out of range; on the staking server, also a non-mainnet wallet |
 | `IDEMPOTENCY_CONFLICT` | The key was used before with different parameters |
 | `PENDING_LIMIT` | Too many requests are waiting |
@@ -30,6 +30,7 @@ sidebar_position: 4
 | `other_server`, `foreign_channel` | Not your server ID or channel |
 | `stale_revision`, `revision_conflict` | Your revision is behind; read `heldRevision` |
 | `other_gateway`, `other_environment` | The manifest names another gateway, or changes the environment set |
+| `bad_network` | `feed.supportedNetworks` names `SOLANA_NETWORK_UNSPECIFIED`, a network the gateway does not know, or the same network twice. An empty list is allowed and declares none |
 | `unknown field` | The schema is strict; an `amount` on a signal is refused |
 | `too_many_requests` | Slow down; the next publish is the retry |
 | `too_many_proposals` | Withdraw some signals first |
@@ -82,6 +83,7 @@ Relay calls answer `401` for a bad credential, `403` for a handle that does not 
 | Message to sign | 4096 bytes |
 | Agent note | 1024 bytes |
 | Required plugins per manifest | 16 |
+| Supported networks per manifest | Each of Mainnet, Devnet and Testnet at most once |
 | Signals held per feed | 200; withdrawals still allowed at the bound |
 | Publish rate per feed server | 2 per second, bursts of 20 |
 | Heartbeat interval; offline after | 30 seconds by default, as the heartbeat answer states; three missed intervals |

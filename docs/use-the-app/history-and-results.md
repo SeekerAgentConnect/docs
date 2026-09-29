@@ -40,6 +40,8 @@ A feed signal's History row can also say **Dismissed on this phone**, **Cancelle
 
 For a transaction the wallet sent, the record shows its signature and **View on Solana Explorer**, which opens `explorer.solana.com` on the right cluster (Mainnet, Devnet or Testnet). There is no explorer link for a signed message, an acknowledgement or a simulation, because no transaction exists. If no app on the phone can open the link, the signature is shown so you can paste it into any explorer.
 
+Each record keeps the address and network the request was actually signed with. Changing a connection's wallet, renaming a wallet or removing it later does not rewrite a record, its explorer link, or the confirmation check still in progress: those follow the original network. A follow-up on something you already hold, such as selling a prediction position, uses the wallet that owns it; if that wallet is no longer saved or needs reconnecting, add or reconnect it first, because SAC does not substitute the connection's current wallet.
+
 SAC submits through the wallet and then stops: it reports what the wallet and the network said, and does not retry.
 
 ## What the sender learns {#what-the-sender-learns}
