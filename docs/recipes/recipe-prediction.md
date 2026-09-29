@@ -12,6 +12,7 @@ sidebar_position: 3
 | **Integration mode** | Feed, **Public** access policy: anyone with the link can read, nobody has to prove a wallet or wait |
 | **Starting point** | The Prediction demo feed server, `examples/demo-prediction` in the [source repository](https://github.com/SeekerAgentConnect/sac) |
 | **Action** | `jupiter.prediction`: you name the market, each subscriber chooses the side and the stake |
+| **Venue** | Jupiter Prediction, shown as **Jupiter Prediction · Powered by Jupiter**. Real markets on Solana mainnet. The market's own source (Polymarket, Kalshi, …) and you, the feed publisher, are shown apart from the venue |
 
 To limit a feed to subscribers you approve instead, see [Copy trading](/docs/recipe-copytrading).
 
@@ -19,7 +20,7 @@ To limit a feed to subscribers you approve instead, see [Copy trading](/docs/rec
 
 - A **Public** sandbox registration and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - A checkout of the source repository with Go, or Docker.
-- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it.
+- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it. Sandbox signals and dismissing a signal spend nothing; a real order needs what is listed under [Before a real trade](#real-trade).
 
 ## Step 1: Run the demo with your filters {#run-with-filters}
 
@@ -61,7 +62,9 @@ Anyone who adds it sees every market you publish. The feed is Public, so there i
 
 ## Expected result {#expected-result}
 
-A subscriber sees a **Prediction signal** in the Inbox with your note. They open it, see the market's current prices and status read from the venue at that moment, choose **Yes** or **No** and a stake, and either **Approve and trade** in production or **Simulate the trade** in sandbox. You never set a side and never see theirs; the order is placed from their wallet.
+A subscriber sees a **Prediction signal** in the Inbox with your note. They open it, see the market's current prices and status read from the venue at that moment, choose **Yes** or **No** and a stake, and either **Approve and trade** in production or **Simulate the trade** in sandbox. You never set a side and never see theirs; the order is placed from their wallet. Before they commit, the review says what Jupiter Prediction is: mainnet, real funds, Jupiter's own fees, region limits, and what happens after the order.
+
+Testing your feed does not require a trade. A subscriber, you included, can read a signal and tap **Dismiss** without spending anything.
 
 What the demo takes care of:
 
@@ -70,6 +73,19 @@ What the demo takes care of:
 - checking in, so the feed reads as online;
 - keeping every published market in its own database, so a restart changes nothing.
 
+## Before a real trade {#real-trade}
+
+What your subscribers should know, and what you should say in your own channel:
+
+- **Real markets, real funds.** Orders are placed on Jupiter Prediction on Solana mainnet. There is no Jupiter test network; sandbox only rehearses the review.
+- **A separate wallet is wise.** Use a wallet meant for this, holding enough USDC or Jupiter's dollar token (JupUSD) for the stake, plus a little SOL for transaction costs.
+- **Fees.** Jupiter charges its own trading fee, included in the quoted cost, and the network charges for the transaction. SAC adds no fee to prediction orders.
+- **Minimum.** Jupiter's minimum order is currently $5 and may change.
+- **Regions.** Jupiter restricts some regions, currently including the United States and South Korea. See [Jupiter's prediction docs](https://developers.jup.ag/docs/prediction).
+- **Order is not position.** Approving submits an **order**, which may fill fully, partly or not at all. What fills becomes a **position**: the wallet's holding of that side of that market.
+- **No refund.** A filled position cannot be cancelled for a refund. While the market is open it can be sold from its History item with **Sell position**, at the current best bid (the whole position is sold, possibly at a loss), or held until the market settles. A settled position is claimed in Jupiter. Nothing guarantees getting the stake back.
+- **Jupiter's own view.** The review offers **This market on Jupiter**, and after an order **Open order on Jupiter**, which opens the Jupiter portfolio. These `jup.ag` links open the Jupiter app if it is installed, otherwise the browser. See [how Jupiter Prediction works](https://docs.jup.ag/user-docs/trade/predict/how-it-works).
+
 ## Going to production {#production}
 
 Ask for a production registration, run the demo with `PUBLISHER_ENVIRONMENT=production` and the new server ID, and share its link. Every setting, the discovery API and the trader page are described in `examples/demo-prediction/README.md`.
@@ -77,4 +93,5 @@ Ask for a production registration, run the demo with `PUBLISHER_ENVIRONMENT=prod
 ## Next {#next}
 
 - [Supported actions](/docs/plugins-and-actions#prediction-terms): the prediction terms you publish.
+- [History and results](/docs/history-and-results#prediction-positions): what a subscriber sees after an order.
 - [Run a Restricted feed](/docs/restricted-feeds), to make it subscriber-only.
