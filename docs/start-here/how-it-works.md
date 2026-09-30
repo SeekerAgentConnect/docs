@@ -15,6 +15,7 @@ sidebar_position: 2
 | **The SAC gateway**, operated by the SAC team | Stores feed publications and delivers them to the subscribers each feed's policy admits, streams updates, sends push wake-ups for feeds, and relays content-free wake-ups for direct servers that ask it to | Hold keys, approve, see a decision, or learn a subscriber's wallet address |
 | **SAC**, the app on your phone | Holds your connections, shows each request, builds and checks transactions, applies your rules, records your decision and its outcome | Hold wallet keys or sign transactions |
 | **Your wallet**, Seed Vault Wallet | Signs and sends only what you approved in SAC. For a Restricted feed, also signs one access message that moves no funds | Know about servers or feeds |
+| **The execution provider**, Jupiter | Through **Metis**, quotes and builds an unsigned swap transaction. Through **Jupiter Prediction**, provides markets, builds order transactions, and returns order and position state; a gasless order transaction may already carry the provider fee payer's signature | Sign for the user's wallet, submit for it, or receive a feed/publisher identifier from SAC |
 
 ## Direct or Feed: how a request reaches you {#direct-or-feed}
 
@@ -51,7 +52,7 @@ These are **execution environments**. They are not access policies, and they are
 |  | Sandbox | Production |
 | --- | --- | --- |
 | Available for | Feeds that offer it | Feeds, and every direct connection (direct is always production) |
-| What approving does | The phone fetches the same market data and builds the same transaction, then **Simulate** records **Simulated** and stops. Nothing is signed or sent | The wallet opens with exactly the transaction you reviewed |
+| What approving does | The phone fetches the same market data and builds the same transaction, then **Simulate** records **Simulated** and stops. Your wallet adds no signature and nothing is submitted; a gasless Prediction transaction may already contain the provider fee payer's signature | The wallet opens with exactly the transaction you reviewed |
 | Network | The same as production: swaps and prediction orders are mainnet transactions in both | Whatever the request names, and the wallet you connected |
 
 Mainnet, Devnet and Testnet are **Solana networks**, a separate choice you make when you [connect your wallet](/docs/wallet-setup#which-network).
@@ -62,6 +63,31 @@ Mainnet, Devnet and Testnet are **Solana networks**, a separate choice you make 
 2. **Confirm in the wallet**, when the request needs a signature. Only then does Seed Vault Wallet open. Declining there is a rejection.
 
 An acknowledgement ends at step 1, and so does a sandbox simulation. Joining a Restricted feed asks the wallet for one more thing, once: a signed message that proves you own the wallet. It is not a transaction and approves nothing.
+
+## A trade from a feed signal {#trade-data-flow}
+
+1. The signal arrives from the publisher through the gateway. It carries the terms, never your amount or side.
+2. **For a swap,** you enter the amount. The phone asks Metis directly for a quote and an unsigned
+   swap transaction, sending the mints, amount and your public wallet address. In a build with a
+   [SAC swap service fee](/docs/swap-service-fee), it also sends the build's public fee rate and fee
+   account.
+3. **For Prediction,** the phone reads Jupiter's markets and, for your public wallet, its order and
+   position state. It asks Jupiter Prediction to build the selected order with its outcome, stake
+   and your public wallet address. A supported gasless transaction can already contain Jupiter's
+   fee-payer signature; Jupiter does not sign for your wallet.
+4. SAC reads the transaction bytes and checks them against the terms, your choice and your [rules](/docs/rules).
+5. You approve, and your wallet adds the user's signature and sends. The user's signing secret stays in the wallet.
+
+Who learns what:
+
+- **The feed publisher and the gateway** receive the signal but SAC does not send either one your
+  decision, amount, side or result.
+- **Jupiter** receives the public wallet and trade data needed for the Metis or Prediction calls
+  above. For Prediction, that includes reads of orders and positions. SAC does not send Jupiter a
+  feed or publisher identifier. Jupiter's
+  [terms of use](https://developers.jup.ag/docs/legal/terms-of-use) and
+  [privacy policy](https://developers.jup.ag/docs/legal/privacy-policy) apply to those calls.
+- **A Solana RPC endpoint** chosen by the app build is read for public accounts: a prediction order's lookup tables, a fee build's fee account, and the confirmation status of transactions you sent.
 
 ## What is stored where {#data}
 

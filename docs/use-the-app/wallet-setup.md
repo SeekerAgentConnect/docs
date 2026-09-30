@@ -29,6 +29,19 @@ Until a wallet is connected, an agent that asks for your address is told there i
 - Swaps, prediction orders, and SKR staking need a **Mainnet** wallet, even in sandbox.
 - Message signing and direct transfers work on any network the wallet offers.
 
+## A wallet for trading {#trading-wallet}
+
+Swaps and prediction orders from feeds are real Solana mainnet transactions with real funds; neither has a test network. Consider connecting a separate account that holds only what you mean to trade:
+
+- **Swaps:** the input token, plus a little SOL for network and priority fees.
+- **Prediction orders:** USDC or Jupiter's dollar token (JupUSD) for the stake, at least Jupiter's current $5 minimum, plus a little SOL for transaction costs.
+
+For swaps, SAC asks Metis for a quote and unsigned transaction. For Prediction, it reads Jupiter's
+market, order and position state and asks it to build the order; a gasless transaction may already
+carry Jupiter's fee-payer signature. SAC checks the bytes, and your wallet adds the user's
+signature—Jupiter never signs for your wallet, and its keys never leave it. Reading a signal and
+dismissing it spends nothing.
+
 ## Disconnect or change {#disconnect}
 
 **Disconnect wallet** forgets the address, tells every server, and cancels requests that were waiting for that wallet. It does not remove servers or feeds. To change the account or network, connect again.
