@@ -12,8 +12,13 @@ A signal does not carry a transaction. It carries the **terms** of an action, an
 1. Your manifest names the plugin your signals need, and your signal names the action and its terms.
 2. The subscriber's phone checks that its build carries that plugin. If not, the signal is readable but has no Approve button. Nothing is ever downloaded.
 3. When the owner opens the signal, they enter what is theirs: the amount, or the side and the stake.
-4. The plugin fetches a quote or the market from the execution provider, directly from the phone, gets an unsigned transaction, and the phone reads the bytes back and checks them against the terms.
-5. Production: the owner approves and the wallet signs and sends. Sandbox: **Simulate** records **Simulated**; nothing is signed and the wallet never opens.
+4. The plugin contacts the execution provider directly from the phone. Metis returns a quote and
+   unsigned swap transaction. Jupiter Prediction returns current market/order/position data and an
+   order transaction; a gasless transaction may already carry its provider fee payer's signature.
+   The phone reads the bytes back and checks them against the terms.
+5. Production: the owner approves and the wallet adds the user's signature and sends. Sandbox:
+   **Simulate** records **Simulated**; the wallet adds no signature, nothing is submitted and the
+   wallet never opens.
 
 ## The plugins that ship today {#plugins}
 
@@ -30,9 +35,9 @@ You, the feed publisher, and the execution provider are separate parties, and th
 
 | | Feed publisher (you) | Execution provider (Jupiter) |
 | --- | --- | --- |
-| Role | Proposes the terms: a pair and a ceiling, or a market | Quotes, routes and builds the unsigned transaction |
-| What the phone gets from it | Your signals, delivered through the SAC gateway | A quote or market and an unsigned transaction, fetched directly by the phone when the owner prepares |
-| Learns about the trade | Nothing: not whether anyone acted, the amount, the side or the result | The mints, the amount or stake, and the owner's public address, as needed to build the transaction |
+| Role | Proposes the terms: a pair and a ceiling, or a market | Metis quotes, routes and builds an unsigned swap; Jupiter Prediction provides market/order/position state and builds an order transaction |
+| What the phone gets from it | Your signals, delivered through the SAC gateway | The applicable quote or market state and transaction; a gasless Prediction transaction may already carry the provider fee payer's signature |
+| Learns about the trade | SAC sends you no subscriber decision, amount, side or result | The mints, amount or stake, outcome and owner's public address needed for the applicable calls; SAC sends no feed or publisher identifier |
 | Endorses SAC | No | No |
 
 For a prediction, the market's own source (Polymarket, Kalshi, …) is a third name, shown apart from both.
@@ -50,7 +55,7 @@ Both work in sandbox and production. Neither is available on devnet: sandbox is 
 
 | Environment | What the phone does when the owner decides |
 | --- | --- |
-| Sandbox | Fetches the real quote or market, builds and checks the real transaction, then stops at **Simulate**. Nothing is signed or sent |
+| Sandbox | Fetches the real quote or market, builds and checks the real transaction, then stops at **Simulate**. The user's wallet adds no signature and nothing is submitted; a gasless Prediction transaction may already contain the provider fee payer's signature |
 | Production | Opens the wallet with exactly the checked transaction. The owner confirms there, and the wallet sends it |
 
 Your manifest names the environment your registration serves; see [Sandbox and production](/docs/feed-gateway#sandbox-and-production).

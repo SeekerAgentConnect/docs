@@ -51,7 +51,11 @@ Swaps and prediction orders from feeds are real Solana mainnet transactions with
 - **Swaps:** the input token, plus a little SOL for network and priority fees.
 - **Prediction orders:** USDC or Jupiter's dollar token (JupUSD) for the stake, at least Jupiter's current $5 minimum, plus a little SOL for transaction costs.
 
-SAC asks Jupiter for quotes and unsigned transactions and checks them; your wallet signs, and its keys never leave it. Reading a signal and dismissing it spends nothing.
+For swaps, SAC asks Metis for a quote and unsigned transaction. For Prediction, it reads Jupiter's
+market, order and position state and asks it to build the order; a gasless transaction may already
+carry Jupiter's fee-payer signature. SAC checks the bytes, and your wallet adds the user's
+signature—Jupiter never signs for your wallet, and its keys never leave it. Reading a signal and
+dismissing it spends nothing.
 
 ## Rename, reconnect or remove {#disconnect}
 
