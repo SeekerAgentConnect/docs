@@ -24,23 +24,9 @@ The general SAC MCP server sits between your AI agent and your phone. The agent 
 Every setup needs two different random tokens: `MCP_TOKEN` for your agent and `PHONE_TOKEN` for the phone API. Generate each with `openssl rand -hex 32`.
 
 <Tabs groupId="mcp-install">
-<TabItem value="source" label="From source" default>
+<TabItem value="npm" label="npm package" default>
 
-From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac), with pnpm:
-
-```sh
-pnpm install --frozen-lockfile
-cp .env.example .env          # set MCP_TOKEN and PHONE_TOKEN to two different values
-pnpm dev:mcp-server
-curl http://127.0.0.1:8080/healthz   # {"status":"ok"}
-```
-
-The development `.env.example` turns on `MCP_DEMO_TOOLS`, which the first request below uses.
-
-</TabItem>
-<TabItem value="npm" label="npm package">
-
-The server is packaged as `@seeker_agent_connect/mcp-server`, with the command `seeker-agent-connect-mcp`:
+The server is published on npm as `@seekeragentconnect/mcp-server`, with the command `seeker-agent-connect-mcp`. Give it a config file and a data directory of its own:
 
 ```sh
 mkdir -p ~/.seeker-agent-connect
@@ -61,27 +47,44 @@ PAIRING_TOKEN_TTL_SECONDS=600
 ENV
 chmod 600 ~/.seeker-agent-connect/config.env
 
-npx --package=@seeker_agent_connect/mcp-server@next -- \
+npx --package=@seekeragentconnect/mcp-server -- \
   seeker-agent-connect-mcp --config ~/.seeker-agent-connect/config.env start
 ```
 
-The server refuses to start half-configured and names what is missing.
-
-:::note
-The packages are release candidates on the `next` tag. If your registry cannot resolve `@seeker_agent_connect/mcp-server`, use the source tab.
-:::
+The server refuses to start half-configured and names what is missing. `npx` takes the newest release; `--package=@seekeragentconnect/mcp-server@0.0.1` pins one. Releases are published with provenance, so `npm audit signatures` verifies an installed copy.
 
 </TabItem>
 <TabItem value="docker" label="Docker">
 
-From a checkout of the source repository, one Compose project on loopback:
+The image `ghcr.io/seekeragentconnect/mcp-server` is public: no `docker login`, `linux/amd64` and `linux/arm64`. It listens on 8080 and keeps its SQLite database in `/data`:
 
 ```sh
-cp deploy/mcp/.env.example deploy/mcp/.env   # set MCP_TOKEN and PHONE_TOKEN
-docker compose --env-file deploy/mcp/.env -f deploy/mcp/compose.yaml up -d --build
+docker run -d --name seeker-mcp \
+  -p 127.0.0.1:8080:8080 \
+  -v seeker-mcp-data:/data \
+  -e SIDECAR_PUBLIC_URL=http://127.0.0.1:8080 \
+  -e MCP_TOKEN=replace-with-a-random-token \
+  -e PHONE_TOKEN=replace-with-a-different-random-token \
+  -e MCP_ENABLED=true \
+  -e MCP_DEMO_TOOLS=true \
+  ghcr.io/seekeragentconnect/mcp-server:0.0.1
 ```
 
-The container keeps its SQLite database in a named volume, so a restart keeps the server identity, the pairing and every request.
+The named volume keeps the server identity, the pairing and every request across restarts; `docker stop` is a clean shutdown. Pin a version tag as above, or the image digest from the release notes on the source repository's [Releases](https://github.com/SeekerAgentConnect/sac/releases) page.
+
+</TabItem>
+<TabItem value="source" label="From source">
+
+From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac), with pnpm:
+
+```sh
+pnpm install --frozen-lockfile
+cp .env.example .env          # set MCP_TOKEN and PHONE_TOKEN to two different values
+pnpm dev:mcp-server
+curl http://127.0.0.1:8080/healthz   # {"status":"ok"}
+```
+
+The development `.env.example` turns on `MCP_DEMO_TOOLS`, which the first request below uses.
 
 </TabItem>
 </Tabs>
@@ -100,7 +103,7 @@ Point your agent at `http://127.0.0.1:8080/mcp` with the header `Authorization: 
 
 ## Step 3: Pair your phone \{#pair-your-phone}
 
-Ask the agent to connect your phone. It calls `vault_create_pairing_link` and shows you a link; you open it on the phone and tap **Pair**. From a terminal, `pnpm pair` (source) or `seeker-agent-connect-mcp --config … pair` (npm) prints the same code as a QR.
+Ask the agent to connect your phone. It calls `vault_create_pairing_link` and shows you a link; you open it on the phone and tap **Pair**. From a terminal, `seeker-agent-connect-mcp --config … pair` (npm), `docker exec seeker-mcp node servers/mcp-server/dist/cli.js pair` (Docker) or `pnpm pair` (source) prints the same code as a QR.
 
 The details, including how the phone reaches a server on your computer, are on [Pair your phone and enable push](/docs/pair-your-phone).
 
@@ -167,7 +170,7 @@ While SAC is open, requests arrive live. To wake the phone when it is closed, re
 
 ## Hosting it \{#hosting}
 
-A hosted server needs public HTTPS with HTTP/2 end to end, because live updates are a stream, and its hostname in `MCP_ALLOWED_HOSTS` if an agent reaches it by name. The Docker preset's `compose.tls.yaml` overlay terminates TLS in the server itself on port 8443; behind a platform that terminates HTTP/2 for you, set `SIDECAR_H2C=true` instead. The full runbook is `deploy/README.md` in the source repository.
+A hosted server needs public HTTPS with HTTP/2 end to end, because live updates are a stream, and its hostname in `MCP_ALLOWED_HOSTS` if an agent reaches it by name. The Compose presets in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository run the published image; their `compose.tls.yaml` overlay terminates TLS in the server itself on port 8443. Behind a platform that terminates HTTP/2 for you, set `SIDECAR_H2C=true` instead. The full runbook is `compose/README.md` in that repository.
 
 ## Troubleshooting \{#troubleshooting}
 

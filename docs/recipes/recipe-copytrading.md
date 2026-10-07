@@ -38,7 +38,7 @@ PUBLISHER_API_TOKEN=$(openssl rand -base64 32) \
 go run ./cmd/copytrading
 ```
 
-Or with Docker: the `deploy/copytrading` Compose project, with the same values in `deploy/copytrading/.env`.
+Or with Docker: the public image `ghcr.io/seekeragentconnect/demo-signals` (the `compose/copytrading` project in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository runs it, with the same values in its `.env`).
 
 By default `/access/v1` is served on the demo's API listener (`PUBLISHER_API_ADDRESS`, `127.0.0.1:8092`). Route your authentication origin to it; the rest of the API stays behind `PUBLISHER_API_TOKEN`. Every access setting is on [Run a Restricted feed](/docs/restricted-feeds#serve-access-endpoint).
 
