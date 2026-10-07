@@ -5,7 +5,7 @@ slug: /protocol
 sidebar_position: 1
 ---
 
-Contracts live in `packages/protocol/proto/seekervault/` in the source repository. This page is the reader's summary. The Direct Server SDK exposes the generated types as `@seeker_agent_connect/server-sdk/protocol`.
+Contracts live in `packages/protocol/proto/seekervault/` in the source repository. This page is the reader's summary. The Direct Server SDK exposes the generated types as `@seekeragentconnect/server-sdk/protocol`.
 
 ## Requests and signals {#requests-and-signals}
 

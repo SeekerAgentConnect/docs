@@ -46,6 +46,18 @@ SAC never creates a wallet, never holds your wallet's keys, and never signs on i
 
 The SAC team operates the gateway. You never deploy or administer it; you integrate with it.
 
+## Get the app \{#get-the-app}
+
+SAC is distributed as a signed APK on the source repository's [latest release](https://github.com/SeekerAgentConnect/sac/releases/latest), as `sac-<version>.apk` with a `SHA256SUMS` file. Download both into one directory, then verify and install:
+
+```sh
+sha256sum -c SHA256SUMS
+apksigner verify --print-certs sac-0.0.1.apk
+adb install --replace sac-0.0.1.apk
+```
+
+The signer's certificate SHA-256 must be `3b29a71fb3c5ff63c9b693f1e9e1fdc945bfd5231a2c1ec1537f4f7ad2164f28`, the same for every release; an APK that shows another certificate did not come from this project. Every update is signed with that key, so it installs over the previous version and keeps your connections and history. An app installed from a debug build or one you signed yourself has to be uninstalled first.
+
 ## What a request can be
 
 Acknowledge a message, sign a message, transfer SOL or a token, swap, place a prediction order, or stake SKR. Every one waits for your tap on the phone. Acknowledgements finish in SAC; the others then open the wallet for your confirmation, except in a sandbox feed, where SAC stops before signing. See [Review requests and signals](/docs/reviewing-requests).

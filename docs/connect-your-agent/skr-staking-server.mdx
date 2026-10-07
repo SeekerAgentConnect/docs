@@ -30,7 +30,47 @@ You do not need to stake anything to finish this guide: the first request is a r
 Generate a token for your agent with `openssl rand -hex 32` and put it in `SKR_STAKING_MCP_TOKEN`.
 
 <Tabs groupId="mcp-install">
-<TabItem value="source" label="From source" default>
+<TabItem value="npm" label="npm package" default>
+
+The server is published on npm as `@seekeragentconnect/mcp-skr-staking`, with the command `seeker-skr-staking-mcp`. Its variables all start with `SKR_STAKING_` and share nothing with the general server:
+
+```sh
+mkdir -p ~/.seeker-skr-staking
+cat > ~/.seeker-skr-staking/config.env <<'ENV'
+SKR_STAKING_DATA_DIR=/home/you/.seeker-skr-staking
+SKR_STAKING_HOST=127.0.0.1
+SKR_STAKING_PORT=8090
+SKR_STAKING_PUBLIC_URL=http://127.0.0.1:8090
+SKR_STAKING_MCP_TOKEN=replace-with-a-random-token
+SKR_STAKING_RPC_URL=https://replace-with-your-mainnet-rpc
+ENV
+chmod 600 ~/.seeker-skr-staking/config.env
+
+npx --package=@seekeragentconnect/mcp-skr-staking -- \
+  seeker-skr-staking-mcp --config ~/.seeker-skr-staking/config.env start
+```
+
+`seeker-skr-staking-mcp --help` lists the commands; `servers/mcp-skr-staking/.env.example` in the source repository lists every variable. `npx` takes the newest release; `--package=@seekeragentconnect/mcp-skr-staking@0.0.1` pins one.
+
+</TabItem>
+<TabItem value="docker" label="Docker">
+
+The image `ghcr.io/seekeragentconnect/mcp-skr-staking` is public and listens on 8090, with its SQLite database in `/data`:
+
+```sh
+docker run -d --name seeker-skr-staking \
+  -p 127.0.0.1:8090:8090 \
+  -v seeker-skr-staking-data:/data \
+  -e SKR_STAKING_PUBLIC_URL=http://127.0.0.1:8090 \
+  -e SKR_STAKING_MCP_TOKEN=replace-with-a-random-token \
+  -e SKR_STAKING_RPC_URL=https://replace-with-your-mainnet-rpc \
+  ghcr.io/seekeragentconnect/mcp-skr-staking:0.0.1
+```
+
+The named volume keeps the pairing and every request across restarts. Pin a version tag as above, or the image digest from the release notes on the source repository's [Releases](https://github.com/SeekerAgentConnect/sac/releases) page.
+
+</TabItem>
+<TabItem value="source" label="From source">
 
 From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac):
 
@@ -38,31 +78,6 @@ From a checkout of the [source repository](https://github.com/SeekerAgentConnect
 pnpm install --frozen-lockfile
 # in .env: SKR_STAKING_MCP_TOKEN and SKR_STAKING_RPC_URL (a mainnet endpoint)
 pnpm dev:mcp-skr-staking          # MCP at http://127.0.0.1:8090/mcp
-```
-
-</TabItem>
-<TabItem value="npm" label="npm package">
-
-The server is packaged as `@seeker_agent_connect/mcp-skr-staking`, with the command `seeker-skr-staking-mcp`. Its variables all start with `SKR_STAKING_` and share nothing with the general server:
-
-```sh
-npx --package=@seeker_agent_connect/mcp-skr-staking@next -- seeker-skr-staking-mcp --help
-```
-
-`servers/mcp-skr-staking/.env.example` in the source repository lists every variable.
-
-:::note
-The packages are release candidates on the `next` tag. If your registry cannot resolve the package, use the source tab.
-:::
-
-</TabItem>
-<TabItem value="docker" label="Docker">
-
-From a checkout of the source repository:
-
-```sh
-cp deploy/skr-staking/.env.example deploy/skr-staking/.env   # SKR_STAKING_MCP_TOKEN, SKR_STAKING_RPC_URL
-docker compose --env-file deploy/skr-staking/.env -f deploy/skr-staking/compose.yaml up -d --build
 ```
 
 </TabItem>
@@ -90,7 +105,7 @@ Other clients: [Connect your agent](/docs/connect-your-agent).
 
 ## Step 3: Pair your phone \{#pair-your-phone}
 
-Ask the agent to connect your phone. It calls `skr_create_pairing_link`; open the link on the phone and tap **Pair**. From a shell on the host, the server's `pair` command prints the same code (`node --env-file-if-exists=.env servers/mcp-skr-staking/src/cli.ts pair` in a checkout). Everything else, including reaching a server on your computer from the phone, is on [Pair your phone and enable push](/docs/pair-your-phone).
+Ask the agent to connect your phone. It calls `skr_create_pairing_link`; open the link on the phone and tap **Pair**. From a shell on the host, the server's `pair` command prints the same code: `seeker-skr-staking-mcp --config … pair` (npm), `docker exec seeker-skr-staking node servers/mcp-skr-staking/dist/cli.js pair` (Docker), or `node --env-file-if-exists=.env servers/mcp-skr-staking/src/cli.ts pair` in a checkout. Everything else, including reaching a server on your computer from the phone, is on [Pair your phone and enable push](/docs/pair-your-phone).
 
 **Expected result:** SAC lists the SKR staking server as its own connection, next to any other server you paired.
 

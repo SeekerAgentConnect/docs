@@ -8,7 +8,7 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-`@seeker_agent_connect/server-sdk` is the engine both supplied MCP servers are built on. Use it when your backend should send requests to one paired phone directly, without MCP: create a request in-process, observe it, and read the result.
+`@seekeragentconnect/server-sdk` is the engine both supplied MCP servers are built on. Use it when your backend should send requests to one paired phone directly, without MCP: create a request in-process, observe it, and read the result.
 
 | The SDK owns | Your code owns |
 | --- | --- |
@@ -25,36 +25,36 @@ The SDK implements **Direct** connections only. It does not publish feeds; for t
 ## Step 1: Install \{#install}
 
 <Tabs groupId="sdk-install">
-<TabItem value="tarball" label="Tarball from source" default>
+<TabItem value="npm" label="npm package" default>
+
+```sh
+npm install @seekeragentconnect/server-sdk @bufbuild/protobuf@2
+```
+
+The package is published from the source repository's release workflow with provenance; `npm audit signatures` verifies it. `npm install @seekeragentconnect/server-sdk@0.0.1` pins a version; `npm view @seekeragentconnect/server-sdk version` shows the newest.
+
+</TabItem>
+<TabItem value="tarball" label="Tarball from source">
 
 From a checkout of the [source repository](https://github.com/SeekerAgentConnect/sac):
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter @seeker_agent_connect/server-sdk run build
+pnpm --filter @seekeragentconnect/server-sdk run build
 npm pack ./packages/server-sdk --pack-destination ./artifacts
 ```
 
 Then, in your project, install the `.tgz` file it printed, together with `@bufbuild/protobuf@2`.
 
 </TabItem>
-<TabItem value="npm" label="npm package">
-
-```sh
-npm install @seeker_agent_connect/server-sdk@next @bufbuild/protobuf@2
-```
-
-The package is a release candidate on the `next` tag. If your registry cannot resolve it, build a tarball from source (first tab).
-
-</TabItem>
 </Tabs>
 
-Two entry points: `@seeker_agent_connect/server-sdk` and `@seeker_agent_connect/server-sdk/protocol` (the generated protocol types). There is no separate protocol package and no supported deep import. `@bufbuild/protobuf` is what you build protocol messages with.
+Two entry points: `@seekeragentconnect/server-sdk` and `@seekeragentconnect/server-sdk/protocol` (the generated protocol types). There is no separate protocol package and no supported deep import. `@bufbuild/protobuf` is what you build protocol messages with.
 
 ## Step 2: Open a server \{#open-a-server}
 
 ```ts
-import { openDirectServer, startPhoneApi } from "@seeker_agent_connect/server-sdk";
+import { openDirectServer, startPhoneApi } from "@seekeragentconnect/server-sdk";
 
 const server = openDirectServer({
   databasePath: "/var/lib/my-server/direct.db",
@@ -73,7 +73,7 @@ Opening migrates the file and fixes the server ID. Reopening the same file keeps
 ## Step 3: Pair the phone \{#pair-the-phone}
 
 ```ts
-import { pairingLandingUrl } from "@seeker_agent_connect/server-sdk";
+import { pairingLandingUrl } from "@seekeragentconnect/server-sdk";
 
 const issued = server.pairing.issue();
 console.info(issued.uri);                   // seekervault://pair?…
@@ -86,8 +86,8 @@ Serve the pairing page at `/pair` with `handlePairingLink(req, res, { publicOrig
 
 ```ts
 import { create } from "@bufbuild/protobuf";
-import { privateRequest } from "@seeker_agent_connect/server-sdk";
-import { ActionSchema, AckActionSchema } from "@seeker_agent_connect/server-sdk/protocol";
+import { privateRequest } from "@seekeragentconnect/server-sdk";
+import { ActionSchema, AckActionSchema } from "@seekeragentconnect/server-sdk/protocol";
 
 const action = create(ActionSchema, {
   kind: { case: "ack", value: create(AckActionSchema, { text: "Deploy finished. OK?" }) },

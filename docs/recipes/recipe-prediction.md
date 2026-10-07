@@ -40,7 +40,7 @@ PREDICTION_MOST_OPEN=5 \
 go run ./cmd/prediction
 ```
 
-The `PREDICTION_*` settings are the filters: categories, keywords, how soon a market closes, the deposit range, how many stay open at once, and how often to poll. Or with Docker: the `deploy/prediction` Compose project.
+The `PREDICTION_*` settings are the filters: categories, keywords, how soon a market closes, the deposit range, how many stay open at once, and how often to poll. Or with Docker: the public image `ghcr.io/seekeragentconnect/demo-prediction` (the `compose/prediction` project in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository runs it with the same values).
 
 **Expected result:** the demo prints your feed link at startup and begins publishing matching markets.
 
