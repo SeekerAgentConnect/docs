@@ -36,6 +36,33 @@ Both live only on this phone. Neither is a server-side log, and a feed publisher
 
 A feed signal's History row can also say **Dismissed on this phone**, **Cancelled by the publisher** or **Expired**.
 
+## Swaps and prediction orders {#swap-and-prediction-records}
+
+A swap's History item keeps what you approved:
+
+| Row | Value |
+| --- | --- |
+| **Swap routing** | `Metis · Powered by Jupiter` |
+| **SAC service fee** | The rate, for example `0.2% of what you receive`; or `None`, `None on this pair`, or `None: its fee account could not be verified` |
+| **SAC service fee, estimated at review** | The provider's estimate, in the token you received |
+| **SAC service fee token** | The mint the fee was taken in |
+| **SAC service fee recipient** | The token account it was credited to |
+
+The fee amount is an **estimate made at review**, not a figure read from the chain: the swap program takes the rate of the route's actual output, which can differ slightly. To check the exact amount, open the transaction on the explorer and look at the recipient's token balance change. See [SAC swap service fee](/docs/swap-service-fee).
+
+A prediction order's item shows **Prediction market** `Jupiter Prediction · Powered by Jupiter` and **SAC service fee** `None`.
+
+### Prediction positions {#prediction-positions}
+
+After a prediction order is sent, its History item follows it. An order and a position are different things: the **order** may fill fully, partly or not at all (**Your order** says which), and what filled is your **position**, your wallet's whole holding of that side of that market. The **Position now** card shows its contracts, value, best bid and profit or loss, as Jupiter reports them.
+
+- While the market is open, **Sell position** sells the whole position at the current best bid, possibly at a loss. You review and sign the sale like any other transaction.
+- A filled position cannot be cancelled for a refund. You can also hold it until the market settles.
+- A settled position is claimed in Jupiter, not sold in SAC.
+- **Open order on Jupiter** (or **Your positions on Jupiter**) opens your Jupiter portfolio, and **This market on Jupiter** the market, in the Jupiter app if it is installed, otherwise in the browser. Jupiter has no page for a single order.
+
+Nothing guarantees getting a stake back. See [how Jupiter Prediction works](https://docs.jup.ag/user-docs/trade/predict/how-it-works).
+
 ## Transaction links {#explorer-links}
 
 For a transaction the wallet sent, the record shows its signature and **View on Solana Explorer**, which opens `explorer.solana.com` on the right cluster (Mainnet, Devnet or Testnet). There is no explorer link for a signed message, an acknowledgement or a simulation, because no transaction exists. If no app on the phone can open the link, the signature is shown so you can paste it into any explorer.

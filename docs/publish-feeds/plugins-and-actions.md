@@ -12,23 +12,50 @@ A signal does not carry a transaction. It carries the **terms** of an action, an
 1. Your manifest names the plugin your signals need, and your signal names the action and its terms.
 2. The subscriber's phone checks that its build carries that plugin. If not, the signal is readable but has no Approve button. Nothing is ever downloaded.
 3. When the owner opens the signal, they enter what is theirs: the amount, or the side and the stake.
-4. The plugin fetches a quote or the market from the provider, builds the transaction, and the phone reads the bytes back and checks them against the terms.
-5. Production: the owner approves and the wallet signs and sends. Sandbox: **Simulate** records **Simulated**; nothing is signed and the wallet never opens.
+4. The plugin contacts the execution provider directly from the phone. Metis returns a quote and
+   unsigned swap transaction. Jupiter Prediction returns current market/order/position data and an
+   order transaction; a gasless transaction may already carry its provider fee payer's signature.
+   The phone reads the bytes back and checks them against the terms.
+5. Production: the owner approves and the wallet adds the user's signature and sends. Sandbox:
+   **Simulate** records **Simulated**; the wallet adds no signature, nothing is submitted and the
+   wallet never opens.
 
 ## The plugins that ship today {#plugins}
 
 One execution provider, **Jupiter**, serves two actions. Manifests and signals name it by the plugin IDs below at contract version 1.
 
-| Plugin ID in the manifest | Action | The owner chooses | Runs on |
-| --- | --- | --- | --- |
-| `jupiter.swap` | `swap` | The amount, and slippage within your ceiling | Mainnet only |
-| `jupiter.prediction` | `prediction.buy` | Yes or No, and the stake | Mainnet only |
+| Plugin ID in the manifest | Action | Shown to the owner as | The owner chooses | Runs on |
+| --- | --- | --- | --- | --- |
+| `jupiter.swap` | `swap` | **Metis · Powered by Jupiter** (Jupiter's v1 Swap API) | The amount, and slippage within your ceiling | Mainnet only |
+| `jupiter.prediction` | `prediction.buy` | **Jupiter Prediction · Powered by Jupiter** | Yes or No, and the stake | Mainnet only |
+
+## Execution provider and publisher {#provider-and-publisher}
+
+You, the feed publisher, and the execution provider are separate parties, and the review shows them apart:
+
+| | Feed publisher (you) | Execution provider (Jupiter) |
+| --- | --- | --- |
+| Role | Proposes the terms: a pair and a ceiling, or a market | Metis quotes, routes and builds an unsigned swap; Jupiter Prediction provides market/order/position state and builds an order transaction |
+| What the phone gets from it | Your signals, delivered through the SAC gateway | The applicable quote or market state and transaction; a gasless Prediction transaction may already carry the provider fee payer's signature |
+| Learns about the trade | SAC sends you no subscriber decision, amount, side or result | The mints, amount or stake, outcome and owner's public address needed for the applicable calls; SAC sends no feed or publisher identifier |
+| Endorses SAC | No | No |
+
+For a prediction, the market's own source (Polymarket, Kalshi, …) is a third name, shown apart from both.
+
+## Fees are the app build's, not yours {#fees}
+
+A signal cannot carry a fee. Fee policy belongs to the app build:
+
+- **Swaps.** The default SAC build adds no service fee. A build may be configured with one, taken from the swap's output and shown to the owner before signing; see [SAC swap service fee](/docs/swap-service-fee). No manifest field, signal term, direct request or QR code can set, raise or redirect it, and you receive none of it. Network, priority and pool costs always apply.
+- **Prediction orders.** SAC adds no fee. Jupiter charges its own trading fee, included in the quoted cost.
+
+A transaction carrying any fee other than the one the owner was shown is a finding, and a finding means no Approve button.
 
 Both work in sandbox and production. Neither is available on devnet: sandbox is not a Solana network. A feed that publishes them declares `SOLANA_NETWORK_MAINNET` in `feed.supportedNetworks`, and its subscribers choose a Mainnet wallet for it.
 
 | Environment | What the phone does when the owner decides |
 | --- | --- |
-| Sandbox | Fetches the real quote or market, builds and checks the real transaction, then stops at **Simulate**. Nothing is signed or sent |
+| Sandbox | Fetches the real quote or market, builds and checks the real transaction, then stops at **Simulate**. The user's wallet adds no signature and nothing is submitted; a gasless Prediction transaction may already contain the provider fee payer's signature |
 | Production | Opens the wallet with exactly the checked transaction. The owner confirms there, and the wallet sends it |
 
 Your manifest names the environment your registration serves; see [Sandbox and production](/docs/feed-gateway#sandbox-and-production).
@@ -62,7 +89,7 @@ There is no side. A `side`, `recommendation`, or any other unknown term is ignor
 
 ## What the phone verifies {#verification}
 
-For a swap: the owner is the authority, the source and destination are the owner's own token accounts, the amount is exactly what the owner entered, the route is a direct one. For a prediction order: the market, the side, the cost, and that the owner is the fee payer and the only missing signer. Anything else in the transaction is a finding, and a finding means no Approve button.
+For a swap: the owner is the authority, the source and destination are the owner's own token accounts, the amount is exactly what the owner entered, the route is a direct one, and the service fee is exactly the build's decided rate, recipient and token, or absent. For a prediction order: the market, the side, the cost, and that the owner is the fee payer and the only missing signer. Anything else in the transaction is a finding, and a finding means no Approve button.
 
 ## Other actions {#other-actions}
 

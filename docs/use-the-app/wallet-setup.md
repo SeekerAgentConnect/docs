@@ -44,6 +44,19 @@ A server or feed says which Solana networks it runs on, and SAC offers only your
 
 Mainnet, Devnet and Testnet are Solana networks. Sandbox and production are something else: whether a feed's approvals really execute. Sandbox is not Devnet.
 
+## A wallet for trading {#trading-wallet}
+
+Swaps and prediction orders from feeds are real Solana mainnet transactions with real funds; neither has a test network. Consider adding a separate wallet that holds only what you mean to trade:
+
+- **Swaps:** the input token, plus a little SOL for network and priority fees.
+- **Prediction orders:** USDC or Jupiter's dollar token (JupUSD) for the stake, at least Jupiter's current $5 minimum, plus a little SOL for transaction costs.
+
+For swaps, SAC asks Metis for a quote and unsigned transaction. For Prediction, it reads Jupiter's
+market, order and position state and asks it to build the order; a gasless transaction may already
+carry Jupiter's fee-payer signature. SAC checks the bytes, and your wallet adds the user's
+signature—Jupiter never signs for your wallet, and its keys never leave it. Reading a signal and
+dismissing it spends nothing.
+
 ## Rename, reconnect or remove {#disconnect}
 
 Open a wallet on the **Wallets** screen.
