@@ -11,7 +11,7 @@ This walkthrough publishes a **Public** sandbox feed with `curl`, so you can see
 
 - A sandbox feed registration and its values: server ID, publisher credential, gateway address and publisher API address ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - `curl` and `uuidgen`.
-- SAC on a phone, with a Mainnet wallet connected if you want to prepare the swap.
+- SAC on a phone, with a Mainnet wallet saved if you want to prepare the swap.
 
 ## Set up your shell {#setup}
 
@@ -35,10 +35,13 @@ curl -sS --fail-with-body "$PUBLISH/seekervault.gateway.v1.PublisherService/Publ
        \"mode\":\"CONNECTION_MODE_GATEWAY_FEED\",\"environments\":[\"SERVER_ENVIRONMENT_SANDBOX\"],
        \"displayName\":\"Example feed\",
        \"requiredPlugins\":[{\"pluginId\":\"jupiter.swap\",\"minContract\":1,\"maxContract\":1}],
-       \"feed\":{\"gatewayUrl\":\"$GATEWAY\",\"channel\":\"$CHANNEL\"}}}"
+       \"feed\":{\"gatewayUrl\":\"$GATEWAY\",\"channel\":\"$CHANNEL\",
+                \"supportedNetworks\":[\"SOLANA_NETWORK_MAINNET\"]}}}"
 ```
 
 **Expected result:** a JSON answer with `PUBLISH_STATUS_STORED`. The environment set is fixed for this server ID; production is a second registration.
+
+`feed.supportedNetworks` declares the Solana networks your signals execute on. Jupiter swaps run only on Mainnet, so this feed says Mainnet, even in sandbox: sandbox is not Devnet. Subscribers are offered only their Mainnet wallets for this feed, and a feed that declares no network is readable but nothing from it is signed. To change the list later, publish the manifest again with a higher `settingsRevision`. The rules are on [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
 
 ## Step 2: Share the feed link {#share-the-link}
 
@@ -46,7 +49,7 @@ curl -sS --fail-with-body "$PUBLISH/seekervault.gateway.v1.PublisherService/Publ
 seekervault://feed?v=1&gateway=https://gateway.example.com&server=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 ```
 
-Add it on your own phone: **Add connection**, paste the link, **Add feed**. Because this feed is Public, that is all a subscriber does.
+Add it on your own phone: **Add connection**, paste the link, **Add feed**, then choose a Mainnet wallet for the feed and tap **Use this wallet**. Because this feed is Public, that is all a subscriber does.
 
 ## Step 3: Publish a signal {#signal}
 
@@ -103,7 +106,7 @@ Before withdrawing, check the signal on your phone:
 
 ## When something is refused {#troubleshooting}
 
-The answer is JSON with a code and a problem name. `unauthenticated`: wrong or revoked credential. `other_server` or `foreign_channel`: not your server ID. `stale_revision` or `revision_conflict`: read `heldRevision` and republish higher. `unknown field`: the schema is strict; an `amount` on a signal is refused, not dropped. Retry only network failures, with the same revision.
+The answer is JSON with a code and a problem name. `unauthenticated`: wrong or revoked credential. `other_server` or `foreign_channel`: not your server ID. `stale_revision` or `revision_conflict`: read `heldRevision` and republish higher. `bad_network`: `supportedNetworks` names an unknown network or one twice. `unknown field`: the schema is strict; an `amount` on a signal is refused, not dropped. Retry only network failures, with the same revision.
 
 Every code is on [Errors and limits](/docs/errors-and-limits#gateway-refusals).
 

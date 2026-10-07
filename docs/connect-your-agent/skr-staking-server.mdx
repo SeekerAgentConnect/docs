@@ -13,14 +13,14 @@ The SKR Staking MCP server manages one owner's SKR staking position. Your agent 
 It is a second, independent server. It has its own pairing, its own token and its own database, and runs side by side with the [general SAC MCP server](/docs/mcp-quickstart) without sharing anything. Pairing it does not touch the general server's pairing.
 
 :::warning[Mainnet only]
-SKR staking exists on Solana **mainnet-beta** only. The server checks at startup that its RPC endpoint serves mainnet-beta and refuses otherwise, and it answers only for a phone whose wallet is connected on **Mainnet**. There is no devnet mode.
+SKR staking exists on Solana **mainnet-beta** only. The server checks at startup that its RPC endpoint serves mainnet-beta and refuses otherwise, and it answers only for a phone that chose a **Mainnet** wallet for this server. There is no devnet mode. Its manifest declares Mainnet as its only network, so SAC offers only your Mainnet wallets when you pair it, and there is no network setting to change.
 :::
 
 ## Prerequisites \{#prerequisites}
 
 - **Node 24.21 or newer**, or Docker.
 - A **mainnet RPC endpoint** for `SKR_STAKING_RPC_URL`.
-- **SAC on an Android phone** with a wallet connected on **Mainnet** ([Connect your wallet](/docs/wallet-setup)).
+- **SAC on an Android phone** with a **Mainnet** wallet saved ([Connect your wallets](/docs/wallet-setup)). You choose it for this server right after pairing.
 - An **MCP client** that speaks Streamable HTTP.
 
 You do not need to stake anything to finish this guide: the first request is a read.
@@ -107,13 +107,13 @@ Other clients: [Connect your agent](/docs/connect-your-agent).
 
 Ask the agent to connect your phone. It calls `skr_create_pairing_link`; open the link on the phone and tap **Pair**. From a shell on the host, the server's `pair` command prints the same code: `seeker-skr-staking-mcp --config … pair` (npm), `docker exec seeker-skr-staking node servers/mcp-skr-staking/dist/cli.js pair` (Docker), or `node --env-file-if-exists=.env servers/mcp-skr-staking/src/cli.ts pair` in a checkout. Everything else, including reaching a server on your computer from the phone, is on [Pair your phone and enable push](/docs/pair-your-phone).
 
-**Expected result:** SAC lists the SKR staking server as its own connection, next to any other server you paired.
+**Expected result:** SAC lists the SKR staking server as its own connection, next to any other server you paired, and opens its wallet picker with your Mainnet wallets. Choose the account that holds your SKR and tap **Use this wallet**. Other connections keep their own wallets.
 
 ## Step 4: Read your position \{#read-your-position}
 
 Ask the agent to call `get_staking_status`. It creates no request, asks you nothing and builds no transaction. It answers with your available, staked and unstaking SKR, whether a cooldown has finished, the program's minimum stake, and a `display` sentence.
 
-**Expected result:** the agent can tell you your position. If it says there is no connected wallet, pair the phone or connect a Mainnet wallet in SAC.
+**Expected result:** the agent can tell you your position. If it says there is no connected wallet, pair the phone, or choose a Mainnet wallet on this server's page in SAC.
 
 ## Step 5: Follow a staking request \{#staking-request}
 
@@ -126,7 +126,7 @@ When you decide to act, the agent calls one of:
 | `request_cancel_unstake` | Put the whole pending unstake back to work | `idempotency_key` |
 | `request_withdraw` | Withdraw what a finished cooldown released | `idempotency_key` |
 
-`amount` is SKR base units as a string; SKR has six decimals, so 1 SKR is `"1000000"`. The wallet is never a parameter: it is the one you connected. Each tool also takes an optional `note`, shown apart from the verified details, and `expires_in_seconds`.
+`amount` is SKR base units as a string; SKR has six decimals, so 1 SKR is `"1000000"`. The wallet is never a parameter: it is the one you chose for this server in SAC. Each tool also takes an optional `note`, shown apart from the verified details, and `expires_in_seconds`.
 
 On the phone each operation has its own review and button. SAC checks the transaction against the staking program before the wallet opens; then you confirm in Seed Vault Wallet.
 
@@ -140,8 +140,8 @@ This server wakes the phone only through the SAC relay: set `SKR_STAKING_RELAY_U
 
 | The agent reads | What to do |
 | --- | --- |
-| No connected wallet | Pair the phone, or connect a wallet in SAC |
-| `INVALID_PARAMETERS` on a devnet or testnet wallet | Connect a **Mainnet** wallet; this server serves nothing else |
+| No connected wallet | Pair the phone, or choose a wallet on this server's page in SAC |
+| `INVALID_PARAMETERS` on a devnet or testnet wallet | Choose a **Mainnet** wallet for this server; it serves nothing else. Only a phone older than network declarations can bind another network |
 | `CHAIN_UNAVAILABLE` | The RPC endpoint did not answer. Try again |
 | Below the minimum stake, insufficient balance | Checked on chain before you are asked. Adjust the amount |
 | Nothing staked, nothing pending, cooldown not finished | Read `get_staking_status`; withdraw first, or wait |

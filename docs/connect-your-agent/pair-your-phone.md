@@ -9,7 +9,7 @@ Both supplied MCP servers, and any server built on the [Direct Server SDK](/docs
 
 ## Before you pair {#before-you-pair}
 
-- **SAC is installed** and a wallet is connected on the phone ([Connect your wallet](/docs/wallet-setup)). Pairing works without a wallet, but no request that needs one can be answered.
+- **SAC is installed** and at least one wallet is saved on the phone, on a network your server declares ([Connect your wallets](/docs/wallet-setup), [Declare your networks](/docs/direct-or-feed#supported-networks)). Pairing works without a wallet, but no request that needs one can be answered.
 - **The phone can reach the server.** The pairing link carries the server's public address (`SIDECAR_PUBLIC_URL` on the general server, `SKR_STAKING_PUBLIC_URL` on the SKR Staking server). Pick the case that fits:
 
 | Where the server runs | What the phone needs |
@@ -42,10 +42,11 @@ Until it is used, anyone who opens it on their phone could pair instead of you. 
 1. Open the link on the phone and tap **Open Seeker Agent Connect**, or scan the QR, or paste the `seekervault://pair` line into **Add connection**.
 2. Check the server address on **Pair with this server?**
 3. Tap **Pair**.
+4. The server's page opens with the wallet picker. Choose the wallet this server should use and tap **Use this wallet**. It lists only wallets on the networks your server declares.
 
 Opening the link or loading the page does nothing by itself; only **Pair** in the app pairs.
 
-**Expected result:** the server appears on the app's connections list, and your agent's next request arrives in the Inbox.
+**Expected result:** the server appears on the app's connections list with its wallet, the server receives that wallet's address and network, and your agent's next request arrives in the Inbox.
 
 A server has **one** paired phone. When a phone is already paired, the tool result includes a `warning`: pairing again from any phone replaces the old pairing and cancels its pending requests. Creating the link alone does not.
 
