@@ -1,13 +1,13 @@
 ---
 title: Connect your wallets
-description: "Save the wallet accounts you use, on the Solana networks you use them on. Each connection signs with the one you choose for it. SAC never asks for a seed phrase."
+description: "Save the wallet accounts you use, on the Solana networks you use them on. Each server signs with the one you choose for it, and each feed signal with the one you choose for its network. SAC never asks for a seed phrase."
 slug: /wallet-setup
 sidebar_position: 1
 ---
 
 On a Solana Seeker the wallet app is **Seed Vault Wallet**. SAC never creates a wallet and never holds your wallet's keys. No screen in SAC ever asks for a seed phrase or a private key. If something does, it is not this app.
 
-SAC keeps a list of **wallets**: each one is an account in a wallet app, on one Solana network. You can save as many as you use, and every server or feed you connect signs with the one you choose for it. There is no single "active" wallet that every connection shares.
+SAC keeps a list of **wallets**: each one is an account in a wallet app, on one Solana network. You can save as many as you use. Each direct server signs with the one you choose for it, and each feed signal with the one you choose for that feed on the signal's network. There is no single "active" wallet that every connection shares.
 
 ## Add a wallet {#connect}
 
@@ -20,15 +20,15 @@ SAC keeps a list of **wallets**: each one is an account in a wallet app, on one 
 
 **Expected result:** the account appears on the **Wallets** screen with its network and wallet app, marked **Not used by any connection**. Adding a wallet does not bind it to anything and tells no server about it: you [choose it for a connection](/docs/connecting-servers#choose-a-wallet) separately.
 
-Only the address and the network of the wallet a connection uses ever leave the phone, and only to that connection's server. The wallet app's authorization for SAC stays on this phone, encrypted, and is never backed up.
+Only the address and the network of the wallet a direct server uses ever leave the phone, and only to that server. A feed is never told which wallet executes its signals. The wallet app's authorization for SAC stays on this phone, encrypted, and is never backed up.
 
-A [Restricted feed](/docs/join-restricted-feed) also asks the feed's wallet to sign one plain-text message, which goes to that feed's publisher to prove the address is yours. It is not a transaction and moves no funds. For each Restricted feed, SAC keeps a separate device key in the Android Keystore that signs later access checks for that feed; it is not a wallet key and cannot sign transactions.
+A [Restricted feed](/docs/join-restricted-feed) also has an **access wallet**, which signs one plain-text message that goes to that feed's publisher to prove the address is yours. It is not a transaction, moves no funds, and the access wallet signs no operation. For each Restricted feed, SAC keeps a separate device key in the Android Keystore that signs later access checks for that feed; it is not a wallet key and cannot sign transactions.
 
 ## Several wallets {#wallet-profiles}
 
 Each saved wallet is one account, in one wallet app, on one network.
 
-- **The same address on two networks is two wallets.** Add your account once for **Mainnet** and again for **Devnet**, and both are listed, each with its own network. A connection uses exactly one of them.
+- **The same address on two networks is two wallets.** Add your account once for **Mainnet** and again for **Devnet**, and both are listed, each with its own network. A direct server, or a feed's signals on one network, use exactly one of them.
 - **Another account in the same wallet app.** Tap **Add wallet** again: SAC always asks the wallet for a fresh authorization, so the wallet lets you pick a different account instead of silently returning the one you added before. If the wallet authorizes several accounts at once, each is saved.
 - **Another wallet app.** Pick it under **Wallet app**. The same address in two different wallet apps is two wallets, and each one's approvals open its own app.
 - **Adding the same account again** (same wallet app, same address, same network) refreshes the wallet you already have rather than making a duplicate. Every connection that uses it keeps using it.
@@ -37,12 +37,24 @@ The **Wallets** screen shows each wallet's name, network and wallet app, and how
 
 ## Which network {#which-network}
 
-A server or feed says which Solana networks it runs on, and SAC offers only your wallets on those networks when you set up the connection.
+A direct server says which Solana networks it runs on, and SAC offers only your wallets on those networks when you pair it. A feed declares the networks its signals may use, and **each signal names one of them**: you choose a wallet on that network when you review it ([Wallets for feed signals](#feed-signals)).
 
-- Swaps, prediction orders, and SKR staking run on **Mainnet** only, even in sandbox. Those servers and feeds offer only Mainnet wallets.
+- Swaps, prediction orders, and SKR staking run on **Mainnet** only, so they need a Mainnet wallet.
 - Message signing and direct transfers work on whichever networks the server declares, for example **Mainnet** for real use and **Devnet** for trying things out.
 
-Mainnet, Devnet and Testnet are Solana networks. Sandbox and production are something else: whether a feed's approvals really execute. Sandbox is not Devnet.
+Mainnet, Devnet and Testnet are Solana networks. Previewing a signal without sending does not change its network: a preview of a Mainnet swap is still a Mainnet swap, never a Devnet one.
+
+## Wallets for feed signals {#feed-signals}
+
+A feed has no wallet of its own for executing. A Public feed needs no wallet to be added or read. When you open a signal, its review shows **Network**, for example *Mainnet · from this signal*, and the **Wallet** that will be used:
+
+1. the wallet you last chose for this feed on this network, if it is still saved and authorized;
+2. otherwise, if you never chose one, your only authorized wallet on that network;
+3. otherwise none. Tap **Choose wallet**, where only authorized wallets on that network can be chosen, or **Connect a wallet on Mainnet** (or the signal's network) if you have none.
+
+Your choice is remembered on this phone for this feed and this network, and applies to its next signal on that network. It is never sent to the publisher or the gateway. Changing it drops anything already prepared for the previous wallet. It never changes who may read a Restricted feed: that is the separate **access wallet** ([Join a Restricted feed](/docs/join-restricted-feed#devices-and-wallets)).
+
+A signal that names no network, a network SAC does not know, or one its feed does not declare stays readable and says why, and nothing is prepared for it. SAC never guesses a network from your wallet.
 
 ## A wallet for trading {#trading-wallet}
 
@@ -63,7 +75,7 @@ Open a wallet on the **Wallets** screen.
 
 - **Rename** gives it your own name. Leave the name blank to go back to the wallet app's own. Renaming changes nothing else and tells no server anything.
 - **Reconnect** asks the same wallet app to authorize the same account again. Use it when SAC says the wallet no longer accepts the authorization. Connections that use the wallet keep it; nothing is moved.
-- **Remove** forgets the wallet on this phone. Before it does, SAC lists the connections that use it. Each of them is left **without a wallet** until you choose one; SAC never picks a replacement for you. A direct server that used it is told there is no wallet, which cancels its own pending requests. Feeds are told nothing. Your **History** keeps the address and network each past request actually used.
+- **Remove** forgets the wallet on this phone. Before it does, SAC lists the connections that use it. Each of them is left **without a wallet** until you choose one, and a feed signal that would have used it asks you to choose; SAC never picks a replacement for you. A direct server that used it is told there is no wallet, which cancels its own pending requests. Feeds are told nothing. Your **History** keeps the address and network each past request actually used.
 
 Removing a server or a feed never removes a wallet. Removing a wallet never removes a connection.
 

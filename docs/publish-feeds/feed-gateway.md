@@ -57,8 +57,8 @@ Share it with your audience any way you like: a page, a QR code, a message. It c
 
 ## What you publish {#what-you-publish}
 
-- A **manifest**: your display name, the environment you serve (sandbox or production), which action plugin your signals need, and the Solana networks they execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)).
-- **Signals**: the terms of an action, such as a swap pair or a prediction market. Never an amount or a side: each subscriber chooses those. See [Supported actions](/docs/plugins-and-actions).
+- A **manifest**: your display name, which action plugin your signals need, and the Solana networks they may execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)).
+- **Signals**: the terms of an action, such as a swap pair or a prediction market, and the one Solana network it executes on, from those your manifest declares. Never an amount, a side or a wallet: each subscriber chooses those. See [Supported actions](/docs/plugins-and-actions).
 - **Updates** and **withdrawals**, as higher revisions of the same signal.
 - A **heartbeat** when you have nothing to publish, so your feed reads as online.
 
@@ -70,9 +70,9 @@ Everything is JSON over HTTPS; no SDK is required. The source repository also ha
 - **Retention.** The gateway keeps each publication, including withdrawn and expired ones, for a retention period after it ends (a week by default), so subscribers can catch up. It is not an archive.
 - **When your server is down.** What you already published stays readable. After three missed heartbeats, subscribers see **Feed offline** instead of a silent feed. Signals you have not yet delivered to the gateway are your server's to keep and retry.
 
-## Sandbox and production {#sandbox-and-production}
+## Preview or execute {#sandbox-and-production}
 
-A sandbox feed lets subscribers rehearse: the phone fetches real market data and builds the real transaction, then stops without signing. Sandbox is not a Solana network; swaps and prediction orders are mainnet transactions in both. Sandbox and production are separate registrations with separate server IDs, and a subscriber adds each feed separately.
+You publish one feed from one registration. Each subscriber decides per signal on their phone: **Preview without sending** fetches real market data and builds and checks the real transaction, then stops before the wallet; approving executes it. A preview runs on the signal's own network, as an execution would: it is not a Solana network of its own and not an on-chain simulation. You are told neither way.
 
 ## Next {#next}
 

@@ -26,7 +26,7 @@ Both live only on this phone. Neither is a server-side log, and a feed publisher
 | **Failed on the network** | The transaction was included but failed |
 | **Expired, never landed** | The transaction expired before it was included |
 | **Sent, network status unresolved** | SAC could not establish the result from the network |
-| **Simulated** | A sandbox signal: nothing was signed or sent |
+| **Simulated** | You previewed a feed signal without sending. Nothing was signed or sent, and the signal stayed open; executing it afterwards replaces this |
 | **Outcome unknown** | The wallet never reported what it did |
 | **The request had already ended** | It had expired or been cancelled before your answer arrived |
 
@@ -34,7 +34,7 @@ Both live only on this phone. Neither is a server-side log, and a feed publisher
 **Outcome unknown** means nobody knows whether a transaction was sent. Check the wallet's own history or an explorer before doing anything again. Never retry from SAC: the transaction may already be on chain.
 :::
 
-A feed signal's History row can also say **Dismissed on this phone**, **Cancelled by the publisher** or **Expired**.
+A feed signal's History row can also say **Previewed on this phone · nothing sent**, **Dismissed on this phone**, **Cancelled by the publisher** or **Expired**.
 
 ## Swaps and prediction orders {#swap-and-prediction-records}
 
@@ -65,7 +65,7 @@ Nothing guarantees getting a stake back. See [how Jupiter Prediction works](http
 
 ## Transaction links {#explorer-links}
 
-For a transaction the wallet sent, the record shows its signature and **View on Solana Explorer**, which opens `explorer.solana.com` on the right cluster (Mainnet, Devnet or Testnet). There is no explorer link for a signed message, an acknowledgement or a simulation, because no transaction exists. If no app on the phone can open the link, the signature is shown so you can paste it into any explorer.
+For a transaction the wallet sent, the record shows its signature and **View on Solana Explorer**, which opens `explorer.solana.com` on the right cluster (Mainnet, Devnet or Testnet). There is no explorer link for a signed message, an acknowledgement or a preview, because no transaction was sent. If no app on the phone can open the link, the signature is shown so you can paste it into any explorer.
 
 Each record keeps the address and network the request was actually signed with. Changing a connection's wallet, renaming a wallet or removing it later does not rewrite a record, its explorer link, or the confirmation check still in progress: those follow the original network. A follow-up on something you already hold, such as selling a prediction position, uses the wallet that owns it; if that wallet is no longer saved or needs reconnecting, add or reconnect it first, because SAC does not substitute the connection's current wallet.
 

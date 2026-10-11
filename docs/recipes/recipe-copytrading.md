@@ -17,10 +17,10 @@ sidebar_position: 1
 
 ## Prerequisites {#prerequisites}
 
-- A **Restricted** sandbox registration at your authentication origin, for example `https://copytrading.example.com`, and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
+- A **Restricted** registration at your authentication origin, for example `https://copytrading.example.com`, and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - A checkout of the source repository with Go, or Docker.
 - A public HTTPS route from your authentication origin to the demo's `/access/v1` endpoint.
-- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it.
+- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. Right after adding the feed you choose its access wallet; each signal is executed with the Mainnet wallet you choose in its review, which may be the same one.
 
 ## Step 1: Run the demo {#run-the-demo}
 
@@ -31,7 +31,6 @@ cd examples/demo-signals
 PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d \
 PUBLISHER_GATEWAY_URL=https://gateway.example.com \
 PUBLISHER_PUBLISH_URL=https://gateway.example.com \
-PUBLISHER_ENVIRONMENT=sandbox \
 PUBLISHER_SUPPORTED_NETWORKS=mainnet \
 PUBLISHER_DATABASE_PATH=./copytrading.db \
 PUBLISHER_AUTH_ORIGIN=https://copytrading.example.com \
@@ -40,7 +39,7 @@ PUBLISHER_API_TOKEN=$(openssl rand -base64 32) \
 go run ./cmd/copytrading
 ```
 
-`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter swaps run on Mainnet only, in sandbox too, so the demo refuses `devnet` or `testnet`.
+`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter swaps run on Mainnet only, so the demo refuses `devnet` or `testnet`.
 
 Or with Docker: the public image `ghcr.io/seekeragentconnect/demo-signals` (the `compose/copytrading` project in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository runs it, with the same values in its `.env`).
 
@@ -87,17 +86,32 @@ From your own script or bot, through the demo's API:
 curl -sS http://127.0.0.1:8092/v1/requests \
   -H "Authorization: Bearer $PUBLISHER_API_TOKEN" -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: desk-1-sol-usdc' \
-  -d '{"expires_at":"2030-01-01T00:00:00Z","note":"trimming SOL into USDC",
+  -d '{"network":"mainnet","expires_at":"2030-01-01T00:00:00Z","note":"trimming SOL into USDC",
        "terms":{"input_mint":"So11111111111111111111111111111111111111112","input_decimals":"9",
                 "output_mint":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","output_decimals":"6",
                 "max_slippage_bps":"50"}}'
 ```
 
-Or from the trader page, where you post, update and withdraw signals by hand. You name the pair and the slippage ceiling, never the amount. Every approved device receives the same signal.
+`network` is required: the Solana network this signal executes on, one your manifest declares. A missing or unknown network is `400 bad_network`; one the demo does not declare is `400 other_network`.
+
+The answer's `request.identity.request_id` is the signal's ID. To update it, send the whole statement again, with the same network:
+
+```sh
+curl -sS -X PUT http://127.0.0.1:8092/v1/requests/$ID \
+  -H "Authorization: Bearer $PUBLISHER_API_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"network":"mainnet","expires_at":"2030-01-01T00:00:00Z","note":"widening the slippage",
+       "terms":{"input_mint":"So11111111111111111111111111111111111111112","input_decimals":"9",
+                "output_mint":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","output_decimals":"6",
+                "max_slippage_bps":"90"}}'
+```
+
+An update cannot change a signal's network (`409 network_fixed`): withdraw it with `POST /v1/requests/$ID/cancel` and post a new one. A signal the demo stored before signals named a network is not published again (`no_network`); withdraw it and post it again with a `network`.
+
+Or use the trader page, where you post, update and withdraw signals by hand and pick the network from the ones your manifest declares. You name the pair and the slippage ceiling, never the amount. Every approved device receives the same signal.
 
 ## Expected result {#expected-result}
 
-Each approved subscriber sees a **Swap signal** in the Inbox with your note. They enter an amount, **Get a quote and prepare**, then **Simulate** in sandbox or **Approve and swap** in production. Their decision, amount and signature stay on their phone.
+Each approved subscriber sees a **Swap signal** in the Inbox with your note. The review shows the signal's network, Mainnet, and the wallet they chose for this feed on Mainnet. They enter an amount, **Get a quote and prepare**, then **Approve and swap**, or **Preview without sending** to check the real quote and transaction without signing. Their decision, amount and signature stay on their phone.
 
 ## What each subscriber reviews and signs {#what-subscribers-sign}
 
@@ -107,13 +121,13 @@ Each approved subscriber sees a **Swap signal** in the Inbox with your note. The
 
 **Quote and minimum.** *Quoted now, after fees* is what the route would pay at this moment. *You receive at least* is that quote less the slippage the subscriber allowed, up to your `max_slippage_bps`. The transaction fails rather than pay less than the minimum. Both figures are already net of every fee. A quote is good for about a minute.
 
-**Service fee.** The default SAC build adds no service fee, and the row reads `0%` with *network and pool costs still apply*. A build configured with one takes it from the swap's output, in the output token, only for output tokens it has a verified account for, and shows the rate, the estimated amount and the recipient before signing. You, as publisher, cannot set, change or receive it. See [SAC swap service fee](/docs/swap-service-fee).
+**Service fee.** The SAC service fee is zero unless the SAC gateway's operator configured one; the row then reads `0%` with *network and pool costs still apply*. A configured fee is taken from the swap's output, in the output token, only for output tokens with a verified fee account, and the review shows the rate, the estimated amount and the recipient before signing. You, as publisher, cannot set, change or receive it. See [SAC swap service fee](/docs/swap-service-fee).
 
 A subscriber you have not approved sees *Waiting for the publisher to approve this device.* and no signals. One you revoked sees that their access was revoked; signals already delivered stay on their phone.
 
-## Going to production {#production}
+## Real swaps {#production}
 
-Sandbox lets followers rehearse with real quotes and no risk. Production swaps are real Solana mainnet transactions: each subscriber needs a Mainnet wallet holding the input token and a little SOL for network fees. When you are ready, ask for a production registration (Restricted, with its authentication origin), run the demo with `PUBLISHER_ENVIRONMENT=production` and the new server ID, and share its link. Each subscriber asks for access to that feed separately. Every setting is in `examples/demo-signals/README.md`.
+A preview lets followers check real quotes with no risk. An approved swap is a real Solana mainnet transaction: each subscriber needs a Mainnet wallet holding the input token and a little SOL for network fees. Nothing changes on your side: the same feed and link serve both, and each subscriber chooses per signal. Every setting is in `examples/demo-signals/README.md`.
 
 ## Next {#next}
 

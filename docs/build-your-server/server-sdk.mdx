@@ -86,7 +86,7 @@ Opening migrates the file and fixes the server ID. Reopening the same file keeps
 - `parseSupportedNetworks(value, source)` reads a comma-separated configuration value of `mainnet`, `devnet` and `testnet` (lowercase, no aliases such as `mainnet-beta`), or `none`. It refuses an unknown name, a repeated name or an empty entry with an error naming `source`, and returns the networks in canonical order. `canonicalSupportedNetworks`, `solanaNetworkName` and `SOLANA_NETWORK_NAMES` are exported with it; the `SolanaNetwork` enum is in `@seeker_agent_connect/server-sdk/protocol`.
 - `openDirectServer` throws before opening the database if the list contains `SolanaNetwork.UNSPECIFIED`, an unknown value or a duplicate.
 - Changing the list moves the manifest's settings revision on the next open, and the phone reads the manifest again. The same list in any order keeps the revision, and an empty list keeps the revision a server had before the field existed.
-- Network is not environment: a direct server is always `production`, whichever networks it declares.
+- A direct request is never previewed: it always executes, on the network of the wallet the owner chose for your server.
 
 Update your server and declare its networks before owners update their phones. The rules shared with feeds, and what the owner sees for a server that declares nothing, are on [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
 

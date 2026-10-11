@@ -75,4 +75,4 @@ What each publisher state means and what to do is on [Manage subscriber access](
 | `PUBLISHER_ACCESS_INVITATION_MINUTES` | `5` (1 to 60) | How long an approved device has to redeem its invitation |
 | `PUBLISHER_ACCESS_CHALLENGES_PER_HOUR` | `60` | Wallet challenges per client IP address per hour; status checks and redemptions get twenty times it. Behind a proxy, the first `X-Forwarded-For` address counts |
 
-The ordinary publisher settings (`PUBLISHER_SERVER_ID`, `PUBLISHER_GATEWAY_URL`, `PUBLISHER_PUBLISH_URL`, `PUBLISHER_ENVIRONMENT`, `BROADCAST_CREDENTIAL`, `PUBLISHER_API_TOKEN`) are on [Connect to the SAC gateway](/docs/connect-to-gateway#configure).
+The ordinary publisher settings (`PUBLISHER_SERVER_ID`, `PUBLISHER_GATEWAY_URL`, `PUBLISHER_PUBLISH_URL`, `BROADCAST_CREDENTIAL`, `PUBLISHER_API_TOKEN`) are on [Connect to the SAC gateway](/docs/connect-to-gateway#configure).

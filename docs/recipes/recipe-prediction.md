@@ -18,9 +18,9 @@ To limit a feed to subscribers you approve instead, see [Copy trading](/docs/rec
 
 ## Prerequisites {#prerequisites}
 
-- A **Public** sandbox registration and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
+- A **Public** feed registration and its values ([Connect to the SAC gateway](/docs/connect-to-gateway)).
 - A checkout of the source repository with Go, or Docker.
-- SAC on a phone with a Mainnet wallet saved, to test as a subscriber. You choose it for the feed right after adding it. Sandbox signals and dismissing a signal spend nothing; a real order needs what is listed under [Before a real trade](#real-trade).
+- SAC on a phone, to test as a subscriber. Adding a Public feed needs no wallet; to prepare an order, save a Mainnet wallet and choose it in the signal's review. A preview and dismissing a signal spend nothing; a real order needs what is listed under [Before a real trade](#real-trade).
 
 ## Step 1: Run the demo with your filters {#run-with-filters}
 
@@ -31,7 +31,6 @@ cd examples/demo-prediction
 PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d \
 PUBLISHER_GATEWAY_URL=https://gateway.example.com \
 PUBLISHER_PUBLISH_URL=https://gateway.example.com \
-PUBLISHER_ENVIRONMENT=sandbox \
 PUBLISHER_SUPPORTED_NETWORKS=mainnet \
 PUBLISHER_DATABASE_PATH=./prediction.db \
 BROADCAST_CREDENTIAL=replace-with-publisher-credential \
@@ -42,7 +41,7 @@ PREDICTION_MOST_OPEN=5 \
 go run ./cmd/prediction
 ```
 
-`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter's prediction markets settle on Mainnet only, so the demo refuses `devnet` or `testnet`.
+`PUBLISHER_SUPPORTED_NETWORKS` is `mainnet` by default and may only be narrowed to `none`: Jupiter's prediction markets settle on Mainnet only, so the demo refuses `devnet` or `testnet`. Every signal it publishes names Mainnet. A market it published before signals named a network is withdrawn and published again with one on its next cycle.
 
 The `PREDICTION_*` settings are the filters: categories, keywords, how soon a market closes, the deposit range, how many stay open at once, and how often to poll. Or with Docker: the public image `ghcr.io/seekeragentconnect/demo-prediction` (the `compose/prediction` project in the separate [`do-deploy`](https://github.com/SeekerAgentConnect/do-deploy) repository runs it with the same values).
 
@@ -62,7 +61,7 @@ Anyone who adds it sees every market you publish. The feed is Public, so there i
 
 ## Expected result {#expected-result}
 
-A subscriber sees a **Prediction signal** in the Inbox with your note. They open it, see the market's current prices and status read from the venue at that moment, choose **Yes** or **No** and a stake, and either **Approve and trade** in production or **Simulate the trade** in sandbox. You never set a side and never see theirs; the order is placed from their wallet. Before they commit, the review says what Jupiter Prediction is: mainnet, real funds, Jupiter's own fees, region limits, and what happens after the order.
+A subscriber sees a **Prediction signal** in the Inbox with your note. They open it, see the market's current prices and status read from the venue at that moment, choose **Yes** or **No** and a stake, and either **Approve and trade**, or **Preview without sending** to check the order without signing it. You never set a side and never see theirs; the order is placed from their wallet. Before they commit, the review says what Jupiter Prediction is: mainnet, real funds, Jupiter's own fees, region limits, and what happens after the order.
 
 Testing your feed does not require a trade. A subscriber, you included, can read a signal and tap **Dismiss** without spending anything.
 
@@ -77,7 +76,7 @@ What the demo takes care of:
 
 What your subscribers should know, and what you should say in your own channel:
 
-- **Real markets, real funds.** Orders are placed on Jupiter Prediction on Solana mainnet. There is no Jupiter test network; sandbox only rehearses the review.
+- **Real markets, real funds.** Orders are placed on Jupiter Prediction on Solana mainnet. There is no Jupiter test network; a preview only checks the order, and sends nothing.
 - **A separate wallet is wise.** Use a wallet meant for this, holding enough USDC or Jupiter's dollar token (JupUSD) for the stake, plus a little SOL for transaction costs.
 - **Fees.** Jupiter charges its own trading fee, included in the quoted cost, and the network charges for the transaction. SAC adds no fee to prediction orders.
 - **Minimum.** Jupiter's minimum order is currently $5 and may change.
@@ -86,9 +85,9 @@ What your subscribers should know, and what you should say in your own channel:
 - **No refund.** A filled position cannot be cancelled for a refund. While the market is open it can be sold from its History item with **Sell position**, at the current best bid (the whole position is sold, possibly at a loss), or held until the market settles. A settled position is claimed in Jupiter. Nothing guarantees getting the stake back.
 - **Jupiter's own view.** The review offers **This market on Jupiter**, and after an order **Open order on Jupiter**, which opens the Jupiter portfolio. These `jup.ag` links open the Jupiter app if it is installed, otherwise the browser. See [how Jupiter Prediction works](https://docs.jup.ag/user-docs/trade/predict/how-it-works).
 
-## Going to production {#production}
+## Settings {#production}
 
-Ask for a production registration, run the demo with `PUBLISHER_ENVIRONMENT=production` and the new server ID, and share its link. Every setting, the discovery API and the trader page are described in `examples/demo-prediction/README.md`.
+The same feed serves previews and real orders: each subscriber chooses per signal, and there is nothing to switch on your side. Every setting, the discovery API and the trader page are described in `examples/demo-prediction/README.md`.
 
 ## Next {#next}
 
