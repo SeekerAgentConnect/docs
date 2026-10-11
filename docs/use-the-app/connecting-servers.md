@@ -1,6 +1,6 @@
 ---
 title: Connect a server or add a feed
-description: "Pair with a direct server, or add a Public feed, then choose the wallet it signs with. Both start from Add connection on Home."
+description: "Pair with a direct server and choose the wallet it signs with, or add a feed. Both start from Add connection on Home."
 slug: /connecting-servers
 sidebar_position: 2
 ---
@@ -13,7 +13,7 @@ Every connection starts from **Add connection** on **Home**. There are two kinds
 | What it does | Pairs this phone with that server. Its requests come only to you | Subscribes this phone. Every subscriber sees the same signals |
 | Who can read it | This phone only | **Public** feed: anyone with the link. **Restricted** feed: only devices the publisher approved |
 | Where your answer goes | Back to the server | Nowhere: it stays on your phone |
-| Environment | Always production | Sandbox or production |
+| Wallet | One you choose for the server, which also fixes its network | Chosen in each signal's review, for the network the signal names. A Restricted feed also has an **access wallet** for reading |
 
 ## Pair with a direct server {#pair-with-a-server}
 
@@ -35,7 +35,9 @@ Opening a link does nothing by itself. A link works once and expires after ten m
 2. Read **Add this public feed?**: it shows the gateway and the server ID.
 3. Tap **Add feed**.
 
-**Expected result:** **Feed added**, the feed's page opens, and SAC asks you to [choose its wallet](#choose-a-wallet). The feed's signals appear in the Inbox. A feed that the publisher offers in sandbox starts in sandbox; its signals say **Sandbox · no funds will move**.
+**Expected result:** **Feed added**, the feed's page opens, and the feed's signals appear in the Inbox. A Public feed needs no wallet to be added or read: you choose one when you act on a signal ([Wallets for feed signals](/docs/wallet-setup#feed-signals)).
+
+SAC adds feeds only from the gateway it was built for. A link that names another gateway is refused: *This feed is on another gateway.*
 
 For a Public feed, the phone never contacts the publisher and creates no credential. The publisher is not told who subscribed or what you decided. The gateway, not the link, decides whether a feed is Public or Restricted.
 
@@ -45,7 +47,9 @@ A link that ends in `&access=restricted` is a subscriber-only feed: adding it st
 
 ## Choose the connection's wallet {#choose-a-wallet}
 
-Every server and feed signs with **one** wallet that you choose for it. Right after you add a connection, its page opens with the wallet picker, **Wallet for** followed by the connection's name. By then SAC has read which Solana networks the server supports, so the picker can filter.
+Every direct server signs with **one** wallet that you choose for it. Right after you pair a server, its page opens with the wallet picker, **Wallet for** followed by the connection's name. By then SAC has read which Solana networks the server supports, so the picker can filter.
+
+A Restricted feed gets the same picker for its **access wallet**, which proves to the publisher who you are and signs no operation; any saved wallet can be chosen. A feed's signals are executed with the wallet you choose in each signal's review ([Wallets for feed signals](/docs/wallet-setup#feed-signals)).
 
 1. Read the line under the title: **This server supports** Mainnet (or the networks it names). **Only wallets on those networks are shown.**
 2. Pick one of your saved wallets.
@@ -57,19 +61,19 @@ If none of your wallets is on a supported network, the picker says **No saved wa
 
 You can leave without choosing. The connection is saved and readable, but nothing from it can be signed until it has a wallet.
 
-Different connections can use different wallets at the same time, and several connections can share one. For example: the SKR Staking server with your main account on Mainnet, a development server with the same address on Devnet, and a prediction feed with a trading account on Mainnet. Each review and each approval uses the connection's own wallet and names it; the wallet you last looked at or used elsewhere makes no difference.
+Different connections can use different wallets at the same time, and several connections can share one. For example: the SKR Staking server with your main account on Mainnet, a development server with the same address on Devnet, and a prediction feed's Mainnet signals with a trading account. Each review and each approval uses the wallet chosen for it and names it; the wallet you last looked at or used elsewhere makes no difference.
 
 ## Change a connection's wallet {#change-wallet}
 
 Open the connection from **Paired servers** on Home and tap its **Wallet** row. The picker is the same, with the same network filter. Nothing changes until you tap **Use this wallet**, and SAC never moves a connection to another wallet or network by itself.
 
-What changing does depends on the kind of connection. The picker says which before you choose.
+What changing does depends on the kind of connection. A feed's signal wallet is not changed here but in the signal's review ([Wallets for feed signals](/docs/wallet-setup#feed-signals)); on a Restricted feed's page, this row is its **Access wallet**.
 
-| | A direct server | A feed |
+| | A direct server | A Restricted feed's access wallet |
 | --- | --- | --- |
-| Who is told | That server only. Other connections and servers are untouched | Nobody. The choice stays on your phone |
+| Who is told | That server only. Other connections and servers are untouched | Nobody, unless the address changes and you ask the publisher again |
 | Pending requests | The server cancels its own pending requests made for the previous wallet, and SAC tells you how many | Nothing is cancelled |
-| Open reviews | A review prepared for the previous wallet can no longer be approved | Anything prepared for the previous wallet is dropped: the next review fetches a new quote and builds a new transaction for the new wallet |
+| Open reviews | A review prepared for the previous wallet can no longer be approved | Unaffected: signals use the wallet chosen in their review |
 | Server unreachable | The choice is saved, and SAC keeps trying to tell the server. Nothing is signed for it until the server confirms | Not applicable |
 | Restricted feed access | Not applicable | The same address on another network keeps its access. Another address has to ask the publisher again ([details](/docs/join-restricted-feed#devices-and-wallets)) |
 
@@ -89,7 +93,7 @@ The connection's **Wallet** row says whether it can sign. Only the first state c
 | This server no longer supports *network*. Choose a wallet on *networks* — the connection isn't moved for you. | The server dropped the network your wallet is on | Choose a wallet on one of the networks named |
 | Telling the server about this wallet. Nothing is signed until it confirms. | A direct server has not confirmed the change yet | Wait, or check that the server is reachable |
 
-A server that has not declared any network can still be given a wallet: a Restricted feed proves who you are with it, and the proof does not depend on a network. Nothing is signed for that server until it declares one.
+A server that has not declared any network can still be given a wallet, but nothing is signed for it until it declares one. A Restricted feed's access wallet can be any saved wallet: the access proof does not depend on a network.
 
 ## Disconnect or remove {#remove}
 

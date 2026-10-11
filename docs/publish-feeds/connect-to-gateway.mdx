@@ -23,10 +23,11 @@ A direct server needs no registration to pair and serve requests; registration o
 | --- | --- | --- |
 | A display name for your server | All | How the team recognises it |
 | What it is for: publishing a feed, the push relay, or both | All | A relay-only registration publishes nothing and needs no manifest |
-| The environment: **sandbox** or **production** | Feeds | Each is its own registration with its own server ID. Start with sandbox |
 | **Public** or **Restricted** | Feeds | Public unless you ask |
 | Your **authentication origin** | Restricted feeds | The public HTTPS origin where phones prove their wallet to your server, such as `https://auth.example.com`. No path, query or fragment. It must match your server's `PUBLISHER_AUTH_ORIGIN` character for character |
 | Your server's host, and an existing server ID if you already have one | Optional | A server ID is a lowercase UUID |
+
+One registration serves your whole feed. There is no separate test registration: each subscriber chooses on their phone whether to preview a signal or execute it.
 
 Never send a wallet key, a seed phrase, or your own API tokens.
 
@@ -40,7 +41,7 @@ Contact the SAC team with the values above. The team registers your server and r
 | --- | --- |
 | **Server ID** | Your server's identity at the gateway. Your feed's channel is `server/<server ID>` |
 | **Credential** | A bearer secret, shown to you once. For a feed it is the publisher credential; for the relay, a relay credential. The gateway stores only its hash |
-| **Gateway address** | The origin phones read your feed from, and your manifest names |
+| **Gateway address** | The origin phones read your feed from, and your manifest names. It is the gateway the SAC app is built to trust: the app refuses a feed link or manifest that names any other |
 | **Publisher API address** | Where your server sends publications. Often the same origin as the gateway address |
 
 Keep the credential in secret storage: never in a page, an app, a feed link, or source control. A publisher credential cannot relay, and a relay credential cannot publish.
@@ -56,8 +57,7 @@ The demo feed servers in the source repository, and any server built on its Go p
 PUBLISHER_SERVER_ID=3f1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 PUBLISHER_GATEWAY_URL=https://gateway.example.com     # the gateway address
 PUBLISHER_PUBLISH_URL=https://gateway.example.com     # the publisher API address; empty means the same
-PUBLISHER_ENVIRONMENT=sandbox                         # as registered
-PUBLISHER_SUPPORTED_NETWORKS=mainnet                  # the Solana networks your signals run on
+PUBLISHER_SUPPORTED_NETWORKS=mainnet                  # the Solana networks your signals may run on
 BROADCAST_CREDENTIAL=replace-with-publisher-credential
 # Restricted feeds only:
 PUBLISHER_AUTH_ORIGIN=https://auth.example.com
@@ -65,7 +65,7 @@ PUBLISHER_AUTH_ORIGIN=https://auth.example.com
 
 `PUBLISHER_GATEWAY_URL` must match the gateway address character for character: the gateway checks it against your manifest.
 
-`PUBLISHER_SUPPORTED_NETWORKS` is a comma-separated list of `mainnet`, `devnet` and `testnet`, or `none`. The two demos default to `mainnet` and refuse `devnet` or `testnet`, because Jupiter runs only on Mainnet. A server built on the library's plain configuration has no default: unset declares no network, and subscribers' phones then sign nothing from the feed. See [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
+`PUBLISHER_SUPPORTED_NETWORKS` is a comma-separated list of `mainnet`, `devnet` and `testnet`, or `none`. It declares where your signals may execute; each signal still names its own network, which must be one of these. The two demos default to `mainnet` and refuse `devnet` or `testnet`, because Jupiter runs only on Mainnet. A server built on the library's plain configuration has no default: unset declares no network, and subscribers' phones then sign nothing from the feed. See [Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks).
 
 </TabItem>
 <TabItem value="feed-custom" label="Feed: your own backend">
@@ -80,7 +80,7 @@ Send every call to `<publisher API address>/seekervault.gateway.v1.PublisherServ
 }
 ```
 
-`supportedNetworks` lists the Solana networks your signals execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)).
+`supportedNetworks` lists the Solana networks your signals may execute on ([Declare the Solana networks you run on](/docs/direct-or-feed#supported-networks)). Each signal is a `PublishRequest` that names one of them in `action.network`.
 
 For a Restricted feed, the manifest's `feed` also states `"access": {"policy": "FEED_ACCESS_POLICY_RESTRICTED", "authOrigin": "https://auth.example.com"}`. Walk through the calls on [Publish your first feed](/docs/publish-your-first-feed).
 
@@ -116,7 +116,6 @@ For a direct server, onboarding is the relay registration above: send a display 
 | --- | --- |
 | Rotate a credential | Ask the SAC team for a second credential, switch your server to it, then ask for the old one to be revoked. Never the other way round |
 | Switch between Public and Restricted, or change the authentication origin | Ask the SAC team. Afterwards, publish your manifest again so the policy it states matches. A change does not revoke access you already granted; that remains your job ([Manage subscriber access](/docs/manage-subscriber-access)) |
-| Go from sandbox to production | Ask for a production registration. It has its own server ID and feed link, and subscribers add it separately |
 | Stop | Ask the SAC team to remove the registration |
 
 ## Next \{#next}

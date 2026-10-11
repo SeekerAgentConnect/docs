@@ -1,20 +1,20 @@
 ---
 title: SAC swap service fee
-description: "The optional service fee a SAC build can add to swaps routed through Metis: what you see before signing, when it is charged, the build settings, and how to check a fee on mainnet."
+description: "The optional service fee SAC can add to feed swaps routed through Metis: what you see before signing, when it is charged, where it is configured, and how to check a fee on mainnet."
 slug: /swap-service-fee
 sidebar_position: 5
 ---
 
-A SAC build can add a **SAC service fee** to swaps routed through **Metis**, Jupiter's v1 Swap API. **The default build charges no service fee** and needs no configuration. A build that charges one says so on every swap review, before anything is signed.
+SAC can add a **SAC service fee** to feed swaps routed through **Metis**, Jupiter's v1 Swap API. **The fee is zero unless the operator of the app's SAC gateway configures one.** When one applies, every swap review says so before anything is signed.
 
-This page is for both sides: what a user sees and can check, and how whoever builds the app configures the fee.
+The app ships with one trusted SAC gateway, and reads the fee, together with the Solana RPC endpoint for each network, from that gateway ([Where it is configured](#settings)). There is no RPC or fee setting in the app for users.
 
 ## What the fee is {#what-it-is}
 
-- A share of the swap's **output**, taken **in the output token** by the swap program, and credited to a public token account controlled by whoever built the app.
-- Charged only on swaps. **Prediction orders carry no SAC fee**: Jupiter Prediction's order has no integrator fee, and Jupiter charges its own trading fee, included in the quoted cost.
-- Set **by the app build only**. A feed publisher, a direct server's request, a QR code or Jupiter's answer cannot set, raise or redirect it.
-- Separate from what a swap always costs: the network fee, the priority fee and the pools' own costs apply with or without it. A build with no service fee is not "free".
+- A share of the swap's **output**, taken **in the output token** by the swap program, and credited to a public token account owned by the fee wallet the gateway's operator configured.
+- Charged only on **feed swaps**, on the network the fee is configured for. **Direct operations never carry a SAC service fee.** **Prediction orders carry no SAC fee**: Jupiter Prediction's order has no integrator fee, and Jupiter charges its own trading fee, included in the quoted cost.
+- Set **only in the gateway's client configuration**. A feed publisher, a manifest, a signal, a direct server's request, a QR code or Jupiter's answer cannot set, raise or redirect it.
+- Separate from what a swap always costs: the network fee, the priority fee and the pools' own costs apply with or without it. A swap with no service fee is not "free".
 
 ## What you see before signing {#what-you-see}
 
@@ -33,20 +33,22 @@ When no fee applies, one row says why instead:
 
 | The review says | Value | Meaning |
 | --- | --- | --- |
-| **SAC service fee (network and pool costs still apply)** | `0%` | This build charges no service fee |
-| **SAC service fee (not charged on this pair)** | `0%` | This build charges one, but not in this swap's output token |
+| **SAC service fee (network and pool costs still apply)** | `0%` | No service fee is configured for this swap's network |
+| **SAC service fee (not charged on this pair)** | `0%` | A fee is configured, but not in this swap's output token |
 | **SAC service fee (not charged: its fee account could not be verified)** | `0%` | The receiving account failed the check below, so the swap carries no fee |
 
 None of these is an error: the swap goes ahead normally, without a fee.
+
+The fee is fixed when the swap is prepared. If the gateway's fee settings change before you sign, the review stops with *The service fee configured for this app changed after this was prepared*: prepare it again and review the new terms. If SAC cannot get usable settings from its gateway, it prepares nothing rather than assume a zero fee.
 
 **Afterwards.** The last screen before the wallet opens repeats the routing and the fee. The History item keeps the routing, the rate, **SAC service fee, estimated at review**, the fee token and the recipient. It is an estimate: the chain takes the rate of the route's actual output, which can differ slightly and which SAC does not read back. To see the exact amount, open the transaction on the explorer and look at the recipient's token balance change.
 
 ## When it is charged {#policy}
 
-1. **One receiving account per output token.** The build lists a token account for each output mint it charges in. A swap whose output mint has no account carries no fee (*not charged on this pair*). A wallet address is never used as a catch-all fee account.
-2. **Checked on chain before quoting.** The phone reads the account through the build's own Solana endpoint. It must exist, belong to the classic SPL Token program (Token-2022 is not supported), hold the swap's output mint, be owned by the build's configured fee wallet, and be initialized and not frozen. If the read fails or any of that is false, the swap is prepared **without** a fee (*could not be verified*).
-   The History record keeps why, as a stable code: `fee_account_no_rpc` (the build has no Solana endpoint), `fee_account_unreadable` (the endpoint did not answer), `fee_account_missing` (never created), `fee_account_not_token_account` (another program, or Token-2022), `fee_account_other_mint`, `fee_account_other_owner`, or `fee_account_not_usable` (not initialized, or frozen).
-3. **Quoted and built with exactly that fee.** The phone asks Metis for the build's rate on that pair and names the verified account when building. An answer with no fee, another rate, or an amount that does not match the rate is refused.
+1. **One receiving account per output token.** The configuration lists a token account for each output mint it charges in. A swap whose output mint has no account carries no fee (*not charged on this pair*). A wallet address is never used as a catch-all fee account.
+2. **Checked on chain before quoting.** The phone reads the account through the Solana RPC endpoint the gateway configures for the swap's network. It must exist, belong to the classic SPL Token program (Token-2022 is not supported), hold the swap's output mint, be owned by the configured fee wallet, and be initialized and not frozen. If the read fails or any of that is false, the swap is prepared **without** a fee (*could not be verified*).
+   The History record keeps why, as a stable code: `fee_account_no_rpc` (no Solana RPC endpoint is configured for the network), `fee_account_unreadable` (the endpoint did not answer), `fee_account_missing` (never created), `fee_account_not_token_account` (another program, or Token-2022), `fee_account_other_mint`, `fee_account_other_owner`, or `fee_account_not_usable` (not initialized, or frozen).
+3. **Quoted and built with exactly that fee.** The phone asks Metis for the configured rate on that pair and names the verified account when building. An answer with no fee, another rate, or an amount that does not match the rate is refused.
 4. **Inspected in the bytes.** Before any Approve button appears, the phone checks the transaction carries exactly the decided fee, or none when none was decided.
 
 | Finding | What it means | Outcome |
@@ -59,136 +61,21 @@ None of these is an error: the swap goes ahead normally, without a fee.
 
 Everything else the swap inspection checks is unchanged: you are the signer and fee payer, the source and destination are your own token accounts, the input is exactly your amount (the fee does not change what you spend, so your rules see the same amount), slippage, the minimum output, a single direct route, and no extra transfers. See [What the phone verifies](/docs/plugins-and-actions#verification).
 
-## Build settings {#settings}
+## Where it is configured {#settings}
 
-For whoever builds the APK. The rate, public addresses and complete Solana RPC URL are extractable
-client configuration: anyone with the APK can recover them. Use only a public RPC endpoint or a
-provider key deliberately intended for distribution in a client, with appropriate quota and abuse
-limits. If the provider requires a key to remain secret, do not embed that endpoint. Never put a
-seed phrase, private signing key or secret Jupiter/RPC credential in these settings.
+The app is built with one trusted SAC gateway address. From that gateway it reads two things that apply to every copy of the app that trusts it:
 
-| Gradle property | Environment variable | Default | Meaning |
-| --- | --- | --- | --- |
-| `seekervault.swapFee.bps` | `SEEKERVAULT_SWAP_FEE_BPS` | `0` | Whole basis points of the swap's output, `0` to `100` (1%). `20` is 0.2%. `0` turns the fee off |
-| `seekervault.swapFee.owner` | `SEEKERVAULT_SWAP_FEE_OWNER` | empty | The public wallet address that owns every receiving token account |
-| `seekervault.swapFee.accounts` | `SEEKERVAULT_SWAP_FEE_ACCOUNTS` | empty | Comma-separated `<mint>=<token account>` pairs: the account that receives the fee in that mint |
-| `seekervault.solanaRpc` | none | empty | The app's read-only Solana endpoint. **Required when the rate is not zero**: the phone verifies each fee account through it. The full URL is embedded in and extractable from the APK; use only a public endpoint or an intentionally client-distributed, appropriately limited key |
+- the **Solana RPC endpoint** for each network (Mainnet, Devnet, Testnet), through which the phone checks fee accounts, reads prediction lookup tables and follows the transactions you sent;
+- the **SAC swap service fee**: a rate from `0` to `100` basis points (1%) of the swap's output, the network it applies to, the fee wallet, and one receiving token account per output mint.
 
-**Precedence.** A Gradle property (`-P…`, `gradle.properties`, or `ORG_GRADLE_PROJECT_…`) wins over its environment variable. An empty value counts as unset.
-
-**Validation.** The build stops with `Invalid SAC swap fee configuration: …` when:
-
-- the rate is not a whole number from 0 to 100;
-- a nonzero rate has no owner, no accounts, or no `seekervault.solanaRpc`;
-- an address is not a base58 public key, or an entry is not `mint=account`;
-- a mint is listed twice;
-- an account is the owner wallet itself, or the mint itself.
-
-Anything set is validated even at rate 0, so a half-finished setting fails early. The swap program would accept up to 255 bps; the app's bound is 100.
-
-**Which mints.** List the output tokens your users receive most, typically USDC and wrapped SOL (`So11111111111111111111111111111111111111112`, which also covers swaps into native SOL). Only classic SPL Token accounts are supported.
-
-## Prepare the receiving accounts {#accounts}
-
-Once, before shipping a fee build, create the fee wallet's token account for each mint you list, with the Solana CLI's `spl-token` or any wallet that creates token accounts:
-
-```sh
-# USDC
-spl-token create-account EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --owner <FEE_WALLET>
-# Wrapped SOL
-spl-token create-account So11111111111111111111111111111111111111112 --owner <FEE_WALLET>
-# Print the account address to put in seekervault.swapFee.accounts
-spl-token address --token EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v --owner <FEE_WALLET> --verbose
-```
-
-Users are never charged for creating these accounts, and the app cannot create or fund them. Do not close them while fee builds are in use: a closed account fails the check, and those swaps carry no fee.
-
-## Build commands {#build}
-
-Values in angle brackets are placeholders; substitute your own public addresses.
-
-A default build, with no service fee:
-
-```sh
-apps/android/gradlew -p apps/android :app:assembleRelease
-```
-
-A fee-enabled build:
-
-```sh
-apps/android/gradlew -p apps/android :app:assembleRelease \
-  -Pseekervault.solanaRpc=https://<your-mainnet-rpc> \
-  -Pseekervault.swapFee.bps=20 \
-  -Pseekervault.swapFee.owner=<FEE_WALLET> \
-  -Pseekervault.swapFee.accounts=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v=<FEE_USDC_ACCOUNT>,So11111111111111111111111111111111111111112=<FEE_WSOL_ACCOUNT>
-```
-
-The same with environment variables:
-
-```sh
-export SEEKERVAULT_SWAP_FEE_BPS=20
-export SEEKERVAULT_SWAP_FEE_OWNER=<FEE_WALLET>
-export SEEKERVAULT_SWAP_FEE_ACCOUNTS=<MINT>=<ACCOUNT>,<MINT>=<ACCOUNT>
-apps/android/gradlew -p apps/android :app:assembleRelease -Pseekervault.solanaRpc=https://<your-mainnet-rpc>
-```
-
-An explicit zero-fee build, overriding anything in the environment:
-
-```sh
-apps/android/gradlew -p apps/android :app:assembleRelease -Pseekervault.swapFee.bps=0
-```
-
-### Sign, verify and install the release APK {#sign-install}
-
-Every `assembleRelease` command above produces an **unsigned** APK. Use the same protected release
-keystore for every update to an installed app, and never commit the keystore or its passwords. With
-Android SDK Build Tools and `adb` installed, sign the locally built artifact as follows;
-`apksigner` prompts for the keystore/key passwords instead of putting them on the command line:
-
-```sh
-export ANDROID_SDK_ROOT=/path/to/Android/Sdk
-export SAC_RELEASE_KEYSTORE=/path/to/sac-release.jks
-export SAC_RELEASE_KEY_ALIAS=sac-release
-
-BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
-UNSIGNED=apps/android/app/build/outputs/apk/release/app-release-unsigned.apk
-ALIGNED=apps/android/app/build/outputs/apk/release/app-release-aligned.apk
-SIGNED=apps/android/app/build/outputs/apk/release/app-release-signed.apk
-
-"$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
-"$BUILD_TOOLS/apksigner" sign \
-  --ks "$SAC_RELEASE_KEYSTORE" \
-  --ks-key-alias "$SAC_RELEASE_KEY_ALIAS" \
-  --out "$SIGNED" \
-  "$ALIGNED"
-"$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$SIGNED"
-adb install --replace "$SIGNED"
-```
-
-For a downloaded CI artifact, set `UNSIGNED` to the downloaded `.apk`; the remaining steps are the
-same. An unsigned artifact is not an installable normal release.
-
-## CI {#ci}
-
-The source repository's `.github/workflows/release.yml` builds the unsigned release APK on a manual dispatch with `component: android`. It reads:
-
-| Name | Kind | Why |
-| --- | --- | --- |
-| `SEEKERVAULT_SWAP_FEE_BPS`, `SEEKERVAULT_SWAP_FEE_OWNER`, `SEEKERVAULT_SWAP_FEE_ACCOUNTS` | Repository **variables** | Public values, not secrets. Unset means no fee |
-| `SEEKERVAULT_SOLANA_RPC` | Repository **variable** | Extractable APK configuration: a public endpoint or an intentionally distributed, appropriately limited client key |
-
-Do not put a provider key that must remain secret in `SEEKERVAULT_SOLANA_RPC`; storing a value as a
-GitHub secret would hide it in CI logs but not from recipients of the APK. The run summary records
-the fee configuration, and the APK is uploaded as a workflow artifact. The workflow signs and
-publishes nothing. `pnpm check:swap-fee-build`, run in the Android CI job, checks the default, both
-ways of configuring a fee, the precedence and every validation error.
+The gateway's operator sets both with the gateway admin's **Client configuration** setting, and a change reaches the app without a rebuild or reinstall. There are no Gradle properties, build environment variables or in-app settings for RPC endpoints or the fee. Everything in the configuration is public, so it never contains a secret key. Operators: fields, validation and the receiving accounts are described in the [SAC client configuration guide](https://github.com/SeekerAgentConnect/sac/blob/develop/docs/wiki/client-config.md).
 
 ## Verify a fee on mainnet {#verify-on-mainnet}
 
 Automated checks never spend anything, so a build, a test or an unsigned transaction is not evidence that a fee is collected. This opt-in check is, and **it spends real funds**:
 
-1. Build a fee APK as above with a small rate (for example `20`) and a USDC account, then complete
-   the signing, signature-verification and `adb install` steps above.
+1. Use an app built for a gateway whose client configuration sets a small rate (for example `20`)
+   with a USDC receiving account.
 2. Note the fee account's balance: `spl-token balance --address <FEE_USDC_ACCOUNT>`.
 3. From a separate wallet holding a little SOL, act on a SOL → USDC swap signal for a small amount. On the review, note the rate, the estimated fee and the recipient, then approve and sign.
 4. When History shows **Confirmed on the network**, open the transaction on the explorer and check the token balance changes: the fee account's USDC rises by about the estimated fee.
@@ -202,7 +89,7 @@ Jupiter's [API & SDK License Agreement](https://developers.jup.ag/docs/legal/sdk
 - [Terms of use](https://developers.jup.ag/docs/legal/terms-of-use) and [privacy policy](https://developers.jup.ag/docs/legal/privacy-policy)
 - [API plans and rate limits](https://developers.jup.ag/docs/portal/plans)
 
-Using the API is not legal approval of a particular build's fee. Whoever ships a fee build is responsible for its terms with Jupiter.
+Using the API is not legal approval of a particular fee. Whoever configures a fee is responsible for its terms with Jupiter.
 
 ## Next {#next}
 

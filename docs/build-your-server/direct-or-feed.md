@@ -20,7 +20,8 @@ Build your own server when neither supplied MCP server fits: your backend alread
 | How the phone connects | A one-use pairing link your server issues | A feed link you share |
 | Where the answer goes | Back to your server, with the outcome | Nowhere: each subscriber's decision, amount and result stay on their phone |
 | Who hosts the phone-facing API | Your server | The SAC gateway |
-| Environment | Always production | Sandbox or production, per registration |
+| Wallet and network | The wallet the owner chose for your server, and its network | Each signal names its network; each subscriber chooses a wallet on that network on their phone |
+| Preview | Never: a direct request always executes | Each subscriber may preview a signal without sending it |
 | Solana networks | Declared by your server: `supportedNetworks` in the SDK | Declared in your manifest: `feed.supportedNetworks` |
 
 :::note
@@ -41,7 +42,7 @@ Both paths share the request vocabulary described on [Protocol](/docs/protocol).
 
 ## Declare the Solana networks you run on {#supported-networks}
 
-Every server that asks an owner to sign declares which Solana networks its operations actually run on: Mainnet, Devnet, Testnet, or a combination. The phone uses that list twice. When the owner adds your server or feed, it offers only their saved wallets on those networks. Before anything is signed, it checks that the wallet chosen for the connection is on one of them.
+Every server that asks an owner to sign declares which Solana networks its operations actually run on: Mainnet, Devnet, Testnet, or a combination. For a direct server, the phone uses that list twice: when the owner adds your server, it offers only their saved wallets on those networks, and before anything is signed, it checks that the connection's wallet is on one of them. For a feed, the list bounds what your signals may name: each signal names one of the declared networks in `action.network`, the gateway refuses any other, and the subscriber chooses a wallet on that network when they review it.
 
 | Your server | Where the list goes | How you set it |
 | --- | --- | --- |
@@ -55,11 +56,11 @@ The rules are the same everywhere:
 
 - **Declare what you really run.** The cluster your RPC endpoint serves, plus any network the owner signs messages on. Not every network the protocol can name: a network you list but do not run is an owner signing something that cannot land.
 - **There is no default.** An empty list means *no networks declared*. It never means Mainnet and never means "all networks". An up-to-date phone shows such a connection and everything it sends, but signs nothing for it and tells the owner the server has to be updated. A server whose requests never reach a wallet, such as one that only asks for acknowledgements, rightly declares nothing.
-- **Network is not environment.** `production` does not mean Mainnet, and `sandbox` does not mean Devnet or Testnet. A sandbox feed still reads Mainnet market data.
+- **A feed's list is not a selection.** It says where your signals may execute; each signal still names its own network, and nothing infers one. A signal published without a network stays readable but is never executed: withdraw it and publish it again as a new signal with a network.
 - **Each network at most once, never unspecified.** The configuration helpers accept the lowercase names `mainnet`, `devnet` and `testnet`, or `none` alone, and refuse anything else at startup. The gateway refuses a feed manifest that names an unknown network or one twice (`bad_network`).
 - **Order does not matter.** Manifests list networks in canonical order (Mainnet, Devnet, Testnet), so the same set written in another order is the same manifest.
 - **Changing the list is a new revision.** Adding or dropping a network changes your settings, so the manifest's `settings_revision` goes up and phones read it again. The supplied servers and the publisher library do this for you on the next start. A manifest that keeps its revision but changes the list is refused, by the gateway as `revision_conflict` and by the phone too.
-- **Dropping a network the owner uses stops signing, not reading.** The phone never moves a connection to another network. It tells the owner their wallet's network is no longer supported, and they choose another wallet.
+- **Dropping a network the owner uses stops signing, not reading.** The phone never moves a connection or a signal to another network. For a direct server, it tells the owner their wallet's network is no longer supported, and they choose another wallet. A feed's signals for the dropped network stay readable and are not executed.
 
 Server metadata is not the only check. For each operation the phone still verifies the signer, the transaction itself, the owner's rules, and that the execution provider serves that network. A multi-network server does not make every action available on every network.
 

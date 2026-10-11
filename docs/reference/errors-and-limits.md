@@ -29,11 +29,15 @@ sidebar_position: 4
 | `unauthenticated` | Wrong, missing, or revoked credential. One answer for all three |
 | `other_server`, `foreign_channel` | Not your server ID or channel |
 | `stale_revision`, `revision_conflict` | Your revision is behind; read `heldRevision` |
-| `other_gateway`, `other_environment` | The manifest names another gateway, or changes the environment set |
-| `bad_network` | `feed.supportedNetworks` names `SOLANA_NETWORK_UNSPECIFIED`, a network the gateway does not know, or the same network twice. An empty list is allowed and declares none |
+| `other_gateway` | The manifest names another gateway |
+| `other_protocol` | A signal's `contractVersion` is not `2`, or a manifest's `protocolVersion` is not `1` |
+| `bad_network` | `feed.supportedNetworks` names `SOLANA_NETWORK_UNSPECIFIED`, a network the gateway does not know, or the same network twice (an empty list is allowed and declares none); or a signal's `action.network` is missing or unknown |
+| `other_network` | The signal's `action.network` is not in the manifest the gateway holds, or no manifest has been published yet |
 | `unknown field` | The schema is strict; an `amount` on a signal is refused |
 | `too_many_requests` | Slow down; the next publish is the retry |
 | `too_many_proposals` | Withdraw some signals first |
+
+A signal stored without a network, from before networks were required or published through the older `PublishProposal` call, is never executed by the app. Withdraw it with `CancelRequest` and publish it again as a new signal with an `action.network`. The demo feed servers refuse to republish such a signal themselves (`no_network`).
 
 ## Restricted feeds {#restricted-feeds}
 
@@ -96,7 +100,7 @@ A prediction order also reports insufficient funds, a market that closed between
 | `fee_account_mismatch` | The fee goes to another account than the verified recipient, or is missing |
 | `fee_mint_mismatch` | The fee is taken in another token than the one shown |
 
-**Fee not charged is not an error.** In a build with a service fee, a swap into a token it has no account for (*not charged on this pair*), or whose fee account fails the on-chain check (*its fee account could not be verified*), goes ahead with no fee. The History records why (`fee_account_missing`, `fee_account_not_token_account`, `fee_account_other_mint`, `fee_account_other_owner`, `fee_account_not_usable`, `fee_account_unreadable`, `fee_account_no_rpc`). See [SAC swap service fee](/docs/swap-service-fee#policy).
+**Fee not charged is not an error.** When a SAC service fee is configured, a swap into a token it has no account for (*not charged on this pair*), or whose fee account fails the on-chain check (*its fee account could not be verified*), goes ahead with no fee. The History records why (`fee_account_missing`, `fee_account_not_token_account`, `fee_account_other_mint`, `fee_account_other_owner`, `fee_account_not_usable`, `fee_account_unreadable`, `fee_account_no_rpc`). See [SAC swap service fee](/docs/swap-service-fee#policy).
 
 **Availability.** Swaps use Metis, Jupiter's v1 Swap API, which Jupiter marks as superseded by Swap V2 and no longer actively developed. If v1 stops answering or changes the transactions it returns, swaps stop preparing (the owner sees one of the codes above) rather than showing something the phone cannot check. The Prediction API is in beta by Jupiter's own description.
 
@@ -122,7 +126,7 @@ A prediction order also reports insufficient funds, a market that closed between
 | Publisher call body | 64 KiB |
 | Relay wake-ups per phone | One every two seconds; extra ones are merged |
 | Prediction order minimum | Five dollars of the stake token (Jupiter's current minimum, which it may change) |
-| SAC swap service fee | `0` by default; a build may set `0` to `100` basis points (1%) of the swap's output |
+| SAC swap service fee | `0` unless the SAC gateway's operator sets up to `100` basis points (1%) of a feed swap's output. Always `0` for direct operations and prediction orders |
 | Jupiter keyless rate | 0.5 requests per second, 30 per minute ([plans](https://developers.jup.ag/docs/portal/plans)) |
 | Swap or prediction preparation | Good for about a minute, then prepare again |
 | Restricted feed: access grant | 6 hours by default (`PUBLISHER_ACCESS_GRANT_HOURS`, 1 to 720), renewed when a third is left |
